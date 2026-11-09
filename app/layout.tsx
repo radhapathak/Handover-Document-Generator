@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import "./globals.css";
+import { ToastProvider } from "@/components/shared/toast";
 
 export const metadata: Metadata = {
-  title: "Handover Document Generator",
-  description: "Turns ServiceNow module configuration into a knowledge-transfer document and flow diagram.",
+  title: "HandoverAI",
+  description: "AI-powered knowledge transfer and handover documentation, backed by ServiceNow.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, background: "#f7f7f8", color: "#1a1a1a" }}>{children}</body>
+      <body className="min-h-screen font-sans">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }
