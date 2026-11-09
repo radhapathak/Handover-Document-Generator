@@ -1,8 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
-
-const MODEL = process.env.KT_MODEL || "claude-sonnet-5-5";
+// Groq's API is OpenAI-compatible: https://console.groq.com/docs/api-reference
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 const PROMPT = `You are a ServiceNow technical writer. Using ONLY the configuration JSON provided,
 write a knowledge-transfer document for a new administrator of the "{module}" module.
@@ -24,17 +22,27 @@ Never invent configuration that is not in the JSON. If unclear, write "Needs con
 export type KTResult = { html: string; mermaid: string; pngBase64: string };
 
 export async function generateKT(module: string, config: string): Promise<KTResult> {
-  const msg = await client.messages.create({
-    model: MODEL,
-    max_tokens: 8000,
-    system: PROMPT.replaceAll("{module}", module),
-    messages: [{ role: "user", content: "Configuration JSON:\n" + config }],
-  });
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY is not set");
 
-  const text = msg.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 8000,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: PROMPT.replaceAll("{module}", module) },
+        { role: "user", content: "Configuration JSON:\n" + config },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`Groq error ${res.status}: ${await res.text()}`);
+
+  const data = await res.json();
+  const text: string = data.choices?.[0]?.message?.content ?? "";
+  if (!text) throw new Error("Groq returned an empty response");
 
   const m = text.match(/```mermaid\s*([\s\S]*?)```/);
   const mermaid = m ? m[1].trim() : "";

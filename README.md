@@ -1,7 +1,7 @@
 # Handover Document Generator
 
 Turns a ServiceNow module's configuration (categories, assignment rules, SLAs, business rules,
-notifications) into a knowledge-transfer document plus a routing flow diagram, using Claude.
+notifications) into a knowledge-transfer document plus a routing flow diagram, using Groq.
 
 - `POST /api/generate` – called by ServiceNow. Header `x-kt-secret`, body `{ "module": "incident", "config": {...} }`.
   Returns `{ html, mermaid, pngBase64 }`.
@@ -11,10 +11,10 @@ notifications) into a knowledge-transfer document plus a routing flow diagram, u
 
 | Name | Required | Purpose |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | yes | Anthropic API key |
+| `GROQ_API_KEY` | yes | Groq API key (console.groq.com → API Keys) |
 | `KT_SHARED_SECRET` | yes | Shared secret ServiceNow (and the demo page) must send |
 | `KROKI_URL` | no | Kroki server for diagram PNGs (default `https://kroki.io`) |
-| `KT_MODEL` | no | Override the Claude model |
+| `GROQ_MODEL` | no | Groq model (default `llama-3.3-70b-versatile`) |
 
 ## Local development
 
