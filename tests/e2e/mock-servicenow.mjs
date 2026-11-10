@@ -8,7 +8,7 @@ const port = Number(process.env.MOCK_SN_PORT || 4020);
 const CLIENT = { id: "test-client", secret: "test-secret" };
 const USERS = { integration: "int-pass", "priya.sharma": "pw-priya", "meera.nair": "pw-meera" };
 const TABLES = ["project", "module_configuration", "document_request", "generated_document", "document_version", "document_approval", "employee_profile", "document_template", "ai_generation_log"].map((t) => `x_hai_${t}`);
-const db = Object.fromEntries(TABLES.map((t) => [t, new Map()]));
+const db = Object.fromEntries([...TABLES, "sys_user"].map((t) => [t, new Map()]));
 const attachments = [];
 const tokens = new Map();
 let counter = 1000;
@@ -59,8 +59,14 @@ const server = http.createServer((req, res) => {
       tokens.set(t, Date.now() + 1800e3);
       return send(res, 200, { access_token: t, token_type: "Bearer", expires_in: 1800, refresh_token: id() });
     }
-    const auth = (req.headers.authorization || "").replace("Bearer ", "");
-    if (!tokens.has(auth) || tokens.get(auth) < Date.now()) return send(res, 401, { error: { message: "User Not Authenticated" } });
+    const header = req.headers.authorization || "";
+    if (header.startsWith("Basic ")) {
+      const [u, ...rest] = Buffer.from(header.slice(6), "base64").toString().split(":");
+      if (USERS[u] !== rest.join(":")) return send(res, 401, { error: { message: "User Not Authenticated" } });
+    } else {
+      const auth = header.replace("Bearer ", "");
+      if (!tokens.has(auth) || tokens.get(auth) < Date.now()) return send(res, 401, { error: { message: "User Not Authenticated" } });
+    }
     stats.apiRequests++;
 
     if (url.pathname === "/api/now/attachment/file" && req.method === "POST") {

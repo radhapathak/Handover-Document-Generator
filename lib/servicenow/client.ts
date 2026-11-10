@@ -56,7 +56,11 @@ async function requestToken(body: URLSearchParams): Promise<{ access_token: stri
 
 function assertConfigured() {
   const sn = config.servicenow;
-  if (!sn.instanceUrl || !sn.clientId || !sn.clientSecret) {
+  if (sn.authMode === "basic") {
+    if (!sn.instanceUrl || !sn.username || !sn.password) {
+      throw new IntegrationError("ServiceNow Basic auth needs SERVICENOW_INSTANCE_URL, SERVICENOW_USERNAME and SERVICENOW_PASSWORD.", 503);
+    }
+  } else if (!sn.instanceUrl || !sn.clientId || !sn.clientSecret) {
     throw new IntegrationError(
       "ServiceNow is not fully configured. Set SERVICENOW_INSTANCE_URL, SERVICENOW_CLIENT_ID and SERVICENOW_CLIENT_SECRET.",
       503
@@ -98,6 +102,7 @@ export async function getServiceToken(force = false): Promise<string> {
 export async function verifyUserCredentials(username: string, password: string): Promise<boolean> {
   assertConfigured();
   const sn = config.servicenow;
+  if (sn.authMode === "basic") return verifyUserBasic(username, password);
   try {
     await requestToken(
       new URLSearchParams({
@@ -119,22 +124,59 @@ export async function verifyUserCredentials(username: string, password: string):
   }
 }
 
-async function snFetch(path: string, init: RequestInit = {}, retried = false): Promise<Response> {
-  const token = await getServiceToken();
+const basicHeader = (user: string, pass: string) => `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`;
+
+/** Basic mode: a user is genuine if ServiceNow accepts their credentials on a minimal REST call. */
+async function verifyUserBasic(username: string, password: string): Promise<boolean> {
+  const sn = config.servicenow;
+  const q = new URLSearchParams({ sysparm_limit: "1", sysparm_fields: "sys_id", sysparm_query: `user_name=${safeQueryValue(username)}` });
   let res: Response;
   try {
-    res = await fetch(`${config.servicenow.instanceUrl}${path}`, {
-      ...init,
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}`, ...(init.headers || {}) },
+    res = await fetch(`${sn.instanceUrl}/api/now/table/sys_user?${q}`, {
+      headers: { Accept: "application/json", Authorization: basicHeader(username, password) },
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",
     });
   } catch (e) {
     throw new IntegrationError("Cannot reach the ServiceNow instance.", 503, String(e));
   }
-  if (res.status === 401 && !retried) {
+  if (res.status === 401) {
+    console.warn(JSON.stringify({ type: "auth", event: "servicenow.basic_rejected", user: username, detail: (await res.text()).slice(0, 300) }));
+    return false;
+  }
+  // 200, or 403 (authenticated but not allowed to read sys_user) both prove the credentials are valid.
+  if (res.ok || res.status === 403) return true;
+  throw new IntegrationError(`ServiceNow sign-in check failed (${res.status}).`, 502, (await res.text()).slice(0, 300));
+}
+
+async function authHeader(): Promise<string> {
+  const sn = config.servicenow;
+  if (sn.authMode === "basic") {
+    assertConfigured();
+    return basicHeader(sn.username, sn.password);
+  }
+  return `Bearer ${await getServiceToken()}`;
+}
+
+async function snFetch(path: string, init: RequestInit = {}, retried = false): Promise<Response> {
+  const authorization = await authHeader();
+  let res: Response;
+  try {
+    res = await fetch(`${config.servicenow.instanceUrl}${path}`, {
+      ...init,
+      headers: { Accept: "application/json", Authorization: authorization, ...(init.headers || {}) },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      cache: "no-store",
+    });
+  } catch (e) {
+    throw new IntegrationError("Cannot reach the ServiceNow instance.", 503, String(e));
+  }
+  if (res.status === 401 && !retried && config.servicenow.authMode === "oauth") {
     cachedToken = null; // token expired or revoked: refresh once
     return snFetch(path, init, true);
+  }
+  if (res.status === 401) {
+    throw new IntegrationError("ServiceNow rejected the integration user's credentials. Check SERVICENOW_USERNAME and SERVICENOW_PASSWORD.", 401, (await res.text()).slice(0, 300));
   }
   if (!res.ok) {
     const text = await res.text();
@@ -251,7 +293,8 @@ export async function checkServiceNowConnection(tables: string[]): Promise<{
   tables: { table: string; ok: boolean; error?: string }[];
 }> {
   try {
-    await getServiceToken(true);
+    if (config.servicenow.authMode === "oauth") await getServiceToken(true);
+    else assertConfigured();
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e), tables: [] };
   }
@@ -268,7 +311,7 @@ export async function checkServiceNowConnection(tables: string[]): Promise<{
   const failed = results.filter((r) => !r.ok);
   return {
     ok: failed.length === 0,
-    message: failed.length ? `${failed.length} table(s) not reachable.` : "Connected to ServiceNow.",
+    message: failed.length ? `${failed.length} table(s) not reachable.` : `Connected to ServiceNow (${config.servicenow.authMode === "basic" ? "Basic auth" : "OAuth 2.0"}).`,
     tables: results,
   };
 }

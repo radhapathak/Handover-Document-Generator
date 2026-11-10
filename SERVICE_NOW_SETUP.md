@@ -204,6 +204,8 @@ How the app authenticates:
 | *Alternative* | `client_credentials` | Used when `SERVICENOW_USERNAME`/`PASSWORD` are empty. Needs Washington DC or later: set the system property `glide.oauth.inbound.client.credential.grant_type.enabled = true`, and set **OAuth Application User** on the registry entry to the integration user. |
 | **End-user sign-in** | `password` (user's own credentials) | The app checks the user's ServiceNow user name and password against `/oauth_token.do`. The user's token is **discarded immediately**; it is only proof of identity. |
 
+> **Sign-in fails with `access_denied`?** Newer releases (and MFA-protected accounts) often refuse the OAuth password grant. Set **`SERVICENOW_AUTH_MODE=basic`** in Vercel and redeploy: the app then uses HTTPS Basic authentication for both the integration user and the sign-in check, and the Client ID/Secret are not used. The reason ServiceNow gave is visible in Vercel Logs (`servicenow.password_grant_rejected`).
+
 > If your instance uses SSO only (no local passwords), end-user sign-in needs an SSO/OIDC provider in front of the app. See "Extending sign-in" in README.md.
 
 ## 6. Employee profiles (application roles)

@@ -27,6 +27,10 @@ export const config = {
     get tablePrefix() {
       return process.env.SERVICENOW_TABLE_PREFIX || "x_hai";
     },
+    /** "oauth" (default) or "basic" — Basic auth over HTTPS for instances that block the OAuth password grant. */
+    get authMode(): "oauth" | "basic" {
+      return process.env.SERVICENOW_AUTH_MODE === "basic" ? "basic" : "oauth";
+    },
   },
   groq: {
     get apiKey() {

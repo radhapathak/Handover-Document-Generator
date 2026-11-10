@@ -264,12 +264,12 @@ try {
   start("node", ["tests/e2e/mock-servicenow.mjs"], {}, "mock-sn");
   await sleep(800);
 
-  const modes = (process.env.E2E_MODES || "demo,servicenow").split(",");
+  const modes = (process.env.E2E_MODES || "demo,servicenow,servicenow-basic").split(",");
   for (const [i, mode] of modes.entries()) {
     const port = 3200 + i;
     const env = mode === "demo"
       ? { ...BASE_ENV, DEMO_MODE: "true", DEMO_PASSWORD: "demo-pass", SERVICENOW_INSTANCE_URL: "" }
-      : { ...BASE_ENV, SERVICENOW_INSTANCE_URL: "http://127.0.0.1:4020", SERVICENOW_CLIENT_ID: "test-client", SERVICENOW_CLIENT_SECRET: "test-secret", SERVICENOW_USERNAME: "integration", SERVICENOW_PASSWORD: "int-pass" };
+      : { ...BASE_ENV, SERVICENOW_INSTANCE_URL: "http://127.0.0.1:4020", SERVICENOW_CLIENT_ID: mode === "servicenow-basic" ? "" : "test-client", SERVICENOW_CLIENT_SECRET: mode === "servicenow-basic" ? "" : "test-secret", SERVICENOW_USERNAME: "integration", SERVICENOW_PASSWORD: "int-pass", SERVICENOW_AUTH_MODE: mode === "servicenow-basic" ? "basic" : "oauth" };
     const app = start("npx", ["next", "start", "-p", String(port)], env, `app-${mode}`);
     await waitFor(`http://127.0.0.1:${port}/login`);
     console.log(`\n=== ${mode.toUpperCase()} MODE ===`);
