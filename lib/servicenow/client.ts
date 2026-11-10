@@ -110,7 +110,11 @@ export async function verifyUserCredentials(username: string, password: string):
     );
     return true;
   } catch (e) {
-    if (e instanceof IntegrationError && e.status === 401) return false;
+    if (e instanceof IntegrationError && e.status === 401) {
+      // ServiceNow's reason (e.g. invalid_client vs access_denied) — no secrets are included.
+      console.warn(JSON.stringify({ type: "auth", event: "servicenow.password_grant_rejected", user: username, detail: (e.detail || "").slice(0, 300) }));
+      return false;
+    }
     throw e;
   }
 }
