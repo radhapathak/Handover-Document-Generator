@@ -141,7 +141,7 @@ async function verifyUserBasic(username: string, password: string): Promise<bool
     throw new IntegrationError("Cannot reach the ServiceNow instance.", 503, String(e));
   }
   if (res.status === 401) {
-    console.warn(JSON.stringify({ type: "auth", event: "servicenow.basic_rejected", user: username, detail: (await res.text()).slice(0, 300) }));
+    console.warn(JSON.stringify({ type: "auth", event: "servicenow.basic_rejected", user: username, instance: new URL(sn.instanceUrl).host, passwordLength: password.length, detail: (await res.text()).slice(0, 300) }));
     return false;
   }
   // 200, or 403 (authenticated but not allowed to read sys_user) both prove the credentials are valid.
