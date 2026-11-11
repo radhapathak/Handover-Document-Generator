@@ -30,7 +30,8 @@ const tables = ORDER.map((key) => {
 });
 
 const script = `/*
- * HandoverAI — ServiceNow setup script (generated; do not edit by hand)
+ * HandoverAI — ServiceNow setup script 1 of 2 (generated; do not edit by hand)
+ * Creates tables, columns, choices, auto-number, integration role and ACLs.
  * Run in: System Definition > Scripts - Background, scope "global", AFTER elevating to security_admin.
  * Safe to run more than once: anything that already exists is skipped.
  */
@@ -144,38 +145,53 @@ const script = `/*
     });
   }
 
-  // 5. Seed: admin employee profile + standard template
-  var prof = new GlideRecord(SCOPE + '_employee_profile');
-  if (!prof.isValid()) fail('employee profile table not usable');
-  else if (prof.get('user_name', ADMIN_USER)) skip('employee profile ' + ADMIN_USER);
-  else {
-    var u = new GlideRecord('sys_user'); u.get('user_name', ADMIN_USER);
-    prof.initialize();
-    prof.setValue('user_name', ADMIN_USER);
-    prof.setValue('full_name', u.isValidRecord() ? (u.getValue('name') || 'System Administrator') : 'System Administrator');
-    prof.setValue('email', u.isValidRecord() ? (u.getValue('email') || '') : '');
-    prof.setValue('role', 'admin'); prof.setValue('active', true); prof.setValue('department', 'Platform');
-    if (prof.insert()) ok('employee profile ' + ADMIN_USER + ' (admin)'); else fail('employee profile ' + ADMIN_USER);
-  }
-  var tpl = new GlideRecord(SCOPE + '_document_template');
-  if (tpl.isValid()) {
-    if (tpl.get('name', 'Standard Module Handover')) skip('template Standard Module Handover');
-    else {
-      tpl.initialize();
-      tpl.setValue('name', 'Standard Module Handover'); tpl.setValue('document_type', 'Technical Handover');
-      tpl.setValue('description', 'Full handover document for a ServiceNow module.');
-      tpl.setValue('sections_json', JSON.stringify(DEFAULT_SECTIONS));
-      tpl.setValue('instructions', 'Write for a new administrator who knows ServiceNow but has never seen this module.');
-      tpl.setValue('manual_effort_hours', 16); tpl.setValue('active', true);
-      if (tpl.insert()) ok('template Standard Module Handover'); else fail('template');
-    }
-  }
-
   gs.print('');
   gs.print('DONE: ' + created + ' created, ' + skipped + ' already existed, ' + errors + ' errors.');
   if (errors) gs.print('Fix the ERROR lines above, then run the script again (it skips what already exists).');
+  else gs.print('Next: run seed-handoverai.js in the HandoverAI scope.');
+})();
+`;
+const seed = `/*
+ * HandoverAI — ServiceNow setup script 2 of 2 (generated; do not edit by hand)
+ * Adds the first admin employee profile and the standard document template.
+ * Run in: System Definition > Scripts - Background, scope = your HandoverAI app (NOT global).
+ * Safe to run more than once.
+ */
+(function () {
+  var SCOPE = 'CHANGE_ME';   // your application scope, e.g. x_2308807_hai
+  var ADMIN_USER = 'admin';   // ServiceNow user_name that becomes the HandoverAI admin
+  var DEFAULT_SECTIONS = ${JSON.stringify(AI_SECTIONS.map((s) => s.key))};
+
+  var prof = new GlideRecord(SCOPE + '_employee_profile');
+  if (!prof.isValid()) { gs.info('ERROR table ' + SCOPE + '_employee_profile not found. Check SCOPE and run script 1 first.'); return; }
+  if (prof.get('user_name', ADMIN_USER)) gs.info('SKIP  employee profile ' + ADMIN_USER + ' already exists');
+  else {
+    prof.initialize();
+    prof.setValue('user_name', ADMIN_USER);
+    prof.setValue('full_name', 'System Administrator');
+    prof.setValue('department', 'Platform');
+    prof.setValue('role', 'admin');
+    prof.setValue('active', true);
+    gs.info(prof.insert() ? 'OK    employee profile ' + ADMIN_USER + ' (admin)' : 'ERROR employee profile not created');
+  }
+
+  var tpl = new GlideRecord(SCOPE + '_document_template');
+  if (tpl.get('name', 'Standard Module Handover')) gs.info('SKIP  template already exists');
+  else {
+    tpl.initialize();
+    tpl.setValue('name', 'Standard Module Handover');
+    tpl.setValue('document_type', 'Technical Handover');
+    tpl.setValue('description', 'Full handover document for a ServiceNow module.');
+    tpl.setValue('sections_json', JSON.stringify(DEFAULT_SECTIONS));
+    tpl.setValue('instructions', 'Write for a new administrator who knows ServiceNow but has never seen this module.');
+    tpl.setValue('manual_effort_hours', 16);
+    tpl.setValue('active', true);
+    gs.info(tpl.insert() ? 'OK    template Standard Module Handover' : 'ERROR template not created');
+  }
+  gs.info('DONE seed script.');
 })();
 `;
 fs.mkdirSync("servicenow", { recursive: true });
+fs.writeFileSync("servicenow/seed-handoverai.js", seed);
 fs.writeFileSync("servicenow/setup-handoverai.js", script);
-console.log(`Wrote servicenow/setup-handoverai.js (${tables.length} tables, ${tables.reduce((s, t) => s + t.columns.length, 0)} columns)`);
+console.log(`Wrote servicenow/setup-handoverai.js and seed-handoverai.js (${tables.length} tables, ${tables.reduce((s, t) => s + t.columns.length, 0)} columns)`);
