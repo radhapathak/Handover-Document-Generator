@@ -37,7 +37,7 @@ export const config = {
       return process.env.GROQ_API_KEY || "";
     },
     get model() {
-      return process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+      return (process.env.GROQ_MODEL || "").trim() || "llama-3.3-70b-versatile";
     },
     get baseUrl() {
       return (process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1").replace(/\/+$/, "");

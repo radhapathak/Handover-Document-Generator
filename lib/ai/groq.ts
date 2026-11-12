@@ -1,7 +1,7 @@
 import type { ZodType } from "zod";
 import { config } from "@/lib/config";
 import { aiLogs } from "@/lib/servicenow/logs";
-import { logError } from "@/lib/audit";
+import { logError, redact } from "@/lib/audit";
 
 export class AiError extends Error {
   constructor(
@@ -37,16 +37,20 @@ export function isGroqConfigured() {
 }
 
 async function callGroq(messages: ChatMessage[], opts: { json: boolean; maxTokens: number; temperature: number }): Promise<GroqResponse> {
-  if (!config.groq.apiKey) {
+  const apiKey = config.groq.apiKey.trim();
+  if (!apiKey) {
     throw new AiError("Groq is not configured. Set GROQ_API_KEY (see GROQ_SETUP.md).", 503);
+  }
+  if (/\s/.test(apiKey) || !apiKey.startsWith("gsk_")) {
+    throw new AiError("GROQ_API_KEY is not valid: it must be one line starting with gsk_, with no spaces or line breaks. Re-enter it in Vercel and redeploy.", 503);
   }
   let res: Response;
   try {
     res = await fetch(`${config.groq.baseUrl}/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.groq.apiKey}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: config.groq.model,
+        model: config.groq.model.trim(),
         messages,
         max_tokens: opts.maxTokens,
         temperature: opts.temperature,
@@ -56,7 +60,7 @@ async function callGroq(messages: ChatMessage[], opts: { json: boolean; maxToken
       cache: "no-store",
     });
   } catch (e) {
-    throw new AiError("Could not reach the Groq API. Please try again.", 503, String(e));
+    throw new AiError("Could not reach the Groq API. Please try again.", 503, redact(String(e)));
   }
   if (!res.ok) {
     const body = await res.text();

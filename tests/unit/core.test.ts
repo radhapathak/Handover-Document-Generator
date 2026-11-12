@@ -7,6 +7,7 @@ import { htmlToBlocks } from "@/lib/documents/blocks";
 import { moduleConfigInput, requestInput, reviewInput } from "@/lib/validation/schemas";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeQueryValue } from "@/lib/store/types";
+import { redact } from "@/lib/audit";
 import type { GeneratedDocument } from "@/types";
 
 describe("ServiceNow record mapping", () => {
@@ -103,5 +104,12 @@ describe("Rate limiting", () => {
     const key = `t-${Math.random()}`;
     for (let i = 0; i < 3; i++) rateLimit(key, 3);
     expect(() => rateLimit(key, 3)).toThrow(/Too many/);
+  });
+});
+
+describe("Log redaction", () => {
+  it("never logs API keys or credentials", () => {
+    const out = redact('TypeError: "Bearer gsk_abcDEF123456" invalid; Basic dXNlcjpwYXNz; password=hunter2 {"api_key":"xyz"}');
+    expect(out).not.toMatch(/abcDEF123456|dXNlcjpwYXNz|hunter2|xyz/);
   });
 });
