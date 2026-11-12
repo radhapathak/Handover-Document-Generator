@@ -141,6 +141,17 @@ async function verifyUserBasic(username: string, password: string): Promise<bool
     throw new IntegrationError("Cannot reach the ServiceNow instance.", 503, String(e));
   }
   if (res.status === 401) {
+    // Diagnostic: does Basic auth work at all on this instance (integration user)?
+    try {
+      const probe = await fetch(`${sn.instanceUrl}/api/now/table/${encodeURIComponent(sn.tablePrefix)}_employee_profile?sysparm_limit=1&sysparm_fields=user_name`, {
+        headers: { Accept: "application/json", Authorization: basicHeader(sn.username, sn.password) },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        cache: "no-store",
+      });
+      console.warn(JSON.stringify({ type: "auth", event: "servicenow.integration_probe", status: probe.status, body: (await probe.text()).slice(0, 300) }));
+    } catch (e) {
+      console.warn(JSON.stringify({ type: "auth", event: "servicenow.integration_probe", error: String(e) }));
+    }
     console.warn(JSON.stringify({ type: "auth", event: "servicenow.basic_rejected", user: username, instance: new URL(sn.instanceUrl).host, passwordLength: password.length, detail: (await res.text()).slice(0, 300) }));
     return false;
   }
