@@ -206,6 +206,8 @@ How the app authenticates:
 
 > **Sign-in fails with `access_denied`?** Newer releases (and MFA-protected accounts) often refuse the OAuth password grant. Set **`SERVICENOW_AUTH_MODE=basic`** in Vercel and redeploy: the app then uses HTTPS Basic authentication for both the integration user and the sign-in check, and the Client ID/Secret are not used. The reason ServiceNow gave is visible in Vercel Logs (`servicenow.password_grant_rejected`).
 
+> **Log shows `SNCRestrictBasicAuthUserAuthenticationGate: denied basic-auth API call for interactive-login user`?** Newer releases restrict Basic auth to users holding the role named in the system property `glide.authenticate.basic_auth.allowed_roles` (default `snc_basic_auth_api_access`). Give **every person who signs in to HandoverAI** that role (User → Roles → Edit…). The integration user is allowed because it is marked *Internal Integration User* (`glide.authenticate.basic_auth.allow_wsao = true`).
+
 > If your instance uses SSO only (no local passwords), end-user sign-in needs an SSO/OIDC provider in front of the app. See "Extending sign-in" in README.md.
 
 ## 6. Employee profiles (application roles)
