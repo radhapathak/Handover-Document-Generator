@@ -32,6 +32,10 @@ interface GroqResponse {
   model: string;
 }
 
+function isReasoningModel(model: string) {
+  return /gpt-oss|qwen3|deepseek-r1/i.test(model);
+}
+
 export function isGroqConfigured() {
   return Boolean(config.groq.apiKey);
 }
@@ -52,7 +56,9 @@ async function callGroq(messages: ChatMessage[], opts: { json: boolean; maxToken
       body: JSON.stringify({
         model: config.groq.model.trim(),
         messages,
-        max_tokens: opts.maxTokens,
+        // Reasoning models (gpt-oss) spend tokens on hidden reasoning: keep it short and allow headroom.
+        ...(isReasoningModel(config.groq.model) ? { reasoning_effort: "low" } : {}),
+        max_tokens: isReasoningModel(config.groq.model) ? Math.min(opts.maxTokens + 4000, 32000) : opts.maxTokens,
         temperature: opts.temperature,
         ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       }),

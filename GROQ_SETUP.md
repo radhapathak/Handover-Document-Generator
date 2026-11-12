@@ -9,7 +9,7 @@ HandoverAI uses Groq's OpenAI-compatible Chat Completions API **from the server 
 4. Store it as `GROQ_API_KEY` in Vercel (or `.env.local` for local development). Never paste it into code, chat or ServiceNow.
 
 ## 2. Choose a model
-Set `GROQ_MODEL` to a chat model currently listed at **https://console.groq.com/docs/models**. Groq retires models over time, so check the list. The default is `llama-3.3-70b-versatile`.
+Set `GROQ_MODEL` to a chat model currently listed at **https://console.groq.com/docs/models**. Groq retires models over time, so check the list (`llama-3.3-70b-versatile` was retired for free/developer accounts in August 2026; see https://console.groq.com/docs/deprecations). For reasoning models such as `openai/gpt-oss-120b` the app sends `reasoning_effort: "low"` and extra token headroom automatically. The default is `openai/gpt-oss-120b`.
 
 The model must support:
 - **JSON mode** (`response_format: {"type":"json_object"}`): used for analysis, sections, diagrams and test cases.

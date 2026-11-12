@@ -16,7 +16,7 @@
 |---|---|---|
 | `AUTH_SECRET` | ✅ | Output of `openssl rand -base64 48` (32+ chars). Changing it signs everyone out. |
 | `GROQ_API_KEY` | ✅ | Your `gsk_…` key. Mark as **Sensitive**. |
-| `GROQ_MODEL` | ✅ | For example `llama-3.3-70b-versatile` |
+| `GROQ_MODEL` | ✅ | For example `openai/gpt-oss-120b` |
 | `SERVICENOW_INSTANCE_URL` | ✅ | `https://<instance>.service-now.com` (no trailing slash) |
 | `SERVICENOW_CLIENT_ID` | ✅ | From the OAuth Application Registry |
 | `SERVICENOW_CLIENT_SECRET` | ✅ | Mark as **Sensitive** |
