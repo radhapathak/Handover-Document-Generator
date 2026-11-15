@@ -157,6 +157,9 @@ async function verifyUserBasic(username: string, password: string): Promise<bool
   }
   // 200, or 403 (authenticated but not allowed to read sys_user) both prove the credentials are valid.
   if (res.ok || res.status === 403) return true;
+  if ([500, 502, 503, 504].includes(res.status)) {
+    throw new IntegrationError("Your ServiceNow instance is asleep or starting up. Wake it on developer.servicenow.com (Manage my instance), wait until it is Online, then sign in again.", 503);
+  }
   throw new IntegrationError(`ServiceNow sign-in check failed (${res.status}).`, 502, (await res.text()).slice(0, 300));
 }
 
@@ -197,6 +200,13 @@ async function snFetch(path: string, init: RequestInit = {}, retried = false): P
       if (j?.error?.message) message = `ServiceNow: ${j.error.message}`;
     } catch {
       /* not JSON */
+    }
+    if ([500, 502, 503, 504].includes(res.status) && text.includes("snow_adc")) {
+      throw new IntegrationError(
+        "Your ServiceNow instance is asleep or starting up. Open it (or developer.servicenow.com → Manage my instance) and wait until it is Online, then try again.",
+        503,
+        text.slice(0, 300)
+      );
     }
     if (res.status === 403) message += " Check the integration user's roles and the table ACLs.";
     if (res.status === 404 && path.includes("/api/now/table/")) message += " Has the table been created? See SERVICE_NOW_SETUP.md.";
