@@ -40,6 +40,19 @@ export function isGroqConfigured() {
   return Boolean(config.groq.apiKey);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Seconds Groq asks us to wait, from the Retry-After header or "try again in 1m2.5s". */
+function retryAfterSeconds(res: Response, body: string): number {
+  const h = Number(res.headers.get("retry-after"));
+  if (h > 0) return h;
+  const m = body.match(/try again in (?:(\d+)m)?([\d.]+)s/i);
+  return m ? Number(m[1] || 0) * 60 + Number(m[2]) : 10;
+}
+
+/** Budget (seconds) a single AI call may spend waiting on Groq rate limits. */
+const MAX_WAIT_SECONDS = Number(process.env.GROQ_MAX_WAIT_SECONDS || 90);
+
 async function callGroq(messages: ChatMessage[], opts: { json: boolean; maxTokens: number; temperature: number }): Promise<GroqResponse> {
   const apiKey = config.groq.apiKey.trim();
   if (!apiKey) {
@@ -48,37 +61,62 @@ async function callGroq(messages: ChatMessage[], opts: { json: boolean; maxToken
   if (/\s/.test(apiKey) || !apiKey.startsWith("gsk_")) {
     throw new AiError("GROQ_API_KEY is not valid: it must be one line starting with gsk_, with no spaces or line breaks. Re-enter it in Vercel and redeploy.", 503);
   }
-  let res: Response;
-  try {
-    res = await fetch(`${config.groq.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: config.groq.model.trim(),
-        messages,
-        // Reasoning models (gpt-oss) spend tokens on hidden reasoning: keep it short and allow headroom.
-        ...(isReasoningModel(config.groq.model) ? { reasoning_effort: "low" } : {}),
-        max_tokens: isReasoningModel(config.groq.model) ? Math.min(opts.maxTokens + 4000, 32000) : opts.maxTokens,
-        temperature: opts.temperature,
-        ...(opts.json ? { response_format: { type: "json_object" } } : {}),
-      }),
-      signal: AbortSignal.timeout(120000),
-      cache: "no-store",
-    });
-  } catch (e) {
-    throw new AiError("Could not reach the Groq API. Please try again.", 503, redact(String(e)));
-  }
-  if (!res.ok) {
+  const model = config.groq.model.trim();
+  const reasoning = isReasoningModel(model);
+  let maxTokens = reasoning ? opts.maxTokens + 1500 : opts.maxTokens;
+  let waited = 0;
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(`${config.groq.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages,
+          ...(reasoning ? { reasoning_effort: "low" } : {}),
+          max_tokens: maxTokens,
+          temperature: opts.temperature,
+          ...(opts.json ? { response_format: { type: "json_object" } } : {}),
+        }),
+        signal: AbortSignal.timeout(120000),
+        cache: "no-store",
+      });
+    } catch (e) {
+      throw new AiError("Could not reach the Groq API. Please try again.", 503, redact(String(e)));
+    }
+    if (res.ok) return res.json();
+
     const body = await res.text();
+    const tpm = body.match(/Limit (\d+), Requested (\d+)/);
+    // One request bigger than the per-minute token limit: shrink the reply budget and retry.
+    if ((res.status === 413 || res.status === 429) && tpm && Number(tpm[2]) > Number(tpm[1])) {
+      const over = Number(tpm[2]) - Number(tpm[1]) + 300;
+      if (maxTokens - over >= 1200) {
+        maxTokens -= over;
+        continue;
+      }
+      throw new AiError("This request is too large for your Groq plan's per-minute token limit. Shorten long fields or uploads, use a template with fewer sections, or upgrade the Groq plan.", 413, body.slice(0, 500));
+    }
+    // Per-minute quota used up by earlier calls: wait as Groq asks, then retry.
+    if (res.status === 429) {
+      const wait = Math.min(retryAfterSeconds(res, body) + 1, 60);
+      if (waited + wait <= MAX_WAIT_SECONDS) {
+        waited += wait;
+        await sleep(wait * 1000);
+        continue;
+      }
+      throw new AiError("Groq rate limit reached (free tier: limited tokens per minute). Please wait a minute and try again.", 429, body.slice(0, 500));
+    }
     const map: Record<number, string> = {
       401: "Groq rejected the API key. Check GROQ_API_KEY.",
-      404: `Groq model "${config.groq.model}" was not found. Check GROQ_MODEL.`,
+      404: `Groq model "${model}" was not found. Check GROQ_MODEL.`,
       413: "The input is too large for the AI model. Shorten some fields or uploads.",
-      429: "Groq rate limit reached. Please wait a minute and try again.",
     };
-    throw new AiError(map[res.status] || `Groq API error (${res.status}).`, res.status === 429 ? 429 : 502, body.slice(0, 500));
+    throw new AiError(map[res.status] || `Groq API error (${res.status}).`, 502, body.slice(0, 500));
   }
-  return res.json();
+  throw new AiError("Groq is busy (rate limit). Please try again in a minute.", 429);
 }
 
 async function logCall(ctx: AiCallContext, started: number, r: GroqResponse | null, err?: unknown) {

@@ -34,7 +34,7 @@ ${list}
 
 Return JSON exactly in this shape:
 {"sections": [{"key": string (one of the keys above), "html": string, "status": "ok" | "information_required" | "conflict"}]}
-Include every key listed, once each, in the same order. Use h4 for sub-headings (the section title is added automatically). Use HTML tables where the guidance says so. Be thorough but concise.` },
+Include every key listed, once each, in the same order. Use h4 for sub-headings (the section title is added automatically). Use HTML tables where the guidance says so. Be concise: about 80-200 words per section.` },
     { role: "user" as const, content: `${context}\n\nANALYSIS SUMMARY:\n${analysisSummary}` },
   ];
 }

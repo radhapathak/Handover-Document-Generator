@@ -45,7 +45,7 @@ export interface GenerationContext {
   template: DocumentTemplate | null;
 }
 
-const MAX_REFERENCE_CHARS = 15000;
+const MAX_REFERENCE_CHARS = Number(process.env.AI_MAX_REFERENCE_CHARS || 6000);
 
 /** Serialises everything the employee supplied. Empty fields are omitted so the AI can spot gaps. */
 export function buildContext(g: GenerationContext): string {
@@ -64,10 +64,11 @@ export function buildContext(g: GenerationContext): string {
 }
 
 export async function analyzeConfiguration(ai: AiCallContext, context: string): Promise<AnalysisResult> {
-  return chatJson({ ...ai, operation: "analyze" }, analyzePrompt(context), analysisSchema, 3000);
+  return chatJson({ ...ai, operation: "analyze" }, analyzePrompt(context), analysisSchema, 2000);
 }
 
-const BATCH = 6;
+/** Sections per AI call. Small batches keep each request under free-tier per-minute token limits. */
+const BATCH = Number(process.env.AI_SECTIONS_PER_CALL || 4);
 
 export async function generateSections(
   ai: AiCallContext,
@@ -86,7 +87,7 @@ export async function generateSections(
   const out: DocSection[] = [];
   for (let i = 0; i < defs.length; i += BATCH) {
     const batch = defs.slice(i, i + BATCH);
-    const r = await chatJson({ ...ai, operation: "generate-sections" }, sectionsPrompt(context, batch, summary, templateInstructions), sectionsSchema, 7000);
+    const r = await chatJson({ ...ai, operation: "generate-sections" }, sectionsPrompt(context, batch, summary, templateInstructions), sectionsSchema, 3500);
     for (const def of batch) {
       const got = r.sections.find((s) => s.key === def.key);
       const html = got ? sanitizeSectionHtml(got.html) : "";
@@ -108,7 +109,7 @@ export async function generateSections(
 export async function regenerateSection(ai: AiCallContext, context: string, key: string, currentHtml: string, instructions: string): Promise<DocSection> {
   const def = sectionDef(key);
   if (!def) throw new AiError(`Unknown section "${key}".`, 400);
-  const r = await chatJson({ ...ai, operation: "regenerate-section" }, regeneratePrompt(context, def, currentHtml, instructions), regenSchema, 5000);
+  const r = await chatJson({ ...ai, operation: "regenerate-section" }, regeneratePrompt(context, def, currentHtml, instructions), regenSchema, 2500);
   const html = sanitizeSectionHtml(r.html);
   if (!html) throw new AiError("The regenerated section was empty after validation. Please try again.");
   return { key, title: def.title, html, status: deriveStatus(html, r.status) };
@@ -117,7 +118,7 @@ export async function regenerateSection(ai: AiCallContext, context: string, key:
 export async function generateFlowchart(ai: AiCallContext, context: string, previous?: { code: string; error: string }) {
   let prev = previous;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const r = await chatJson({ ...ai, operation: "generate-flowchart" }, flowchartPrompt(context, prev), flowSchema, 3000);
+    const r = await chatJson({ ...ai, operation: "generate-flowchart" }, flowchartPrompt(context, prev), flowSchema, 2000);
     const check = sanitizeMermaid(r.mermaid);
     if (check.ok) return { mermaid: check.code, notes: r.notes };
     prev = { code: check.code, error: check.error || "Invalid diagram" };
@@ -126,7 +127,7 @@ export async function generateFlowchart(ai: AiCallContext, context: string, prev
 }
 
 export async function generateTestCases(ai: AiCallContext, context: string) {
-  const r = await chatJson({ ...ai, operation: "generate-test-cases" }, testCasesPrompt(context), testSchema, 6000);
+  const r = await chatJson({ ...ai, operation: "generate-test-cases" }, testCasesPrompt(context), testSchema, 3500);
   const rows = r.testCases
     .map(
       (t) =>

@@ -39,6 +39,9 @@ Safeguards:
 - **Groq account limits:** free and on-demand tiers have tokens-per-minute caps. A full 23-section document uses roughly 5 calls and 25–40k tokens. If Groq answers `429`, users see *"Groq rate limit reached. Please wait a minute."* Upgrade your Groq plan for heavier use.
 - **Input size:** reference uploads add up to 15,000 characters of context per call.
 
+### Free tier (8,000 tokens per minute)
+The app is tuned for small accounts: sections are written 4 at a time with short replies, and when Groq answers "rate limit" the app waits the time Groq asks for and retries automatically (up to `GROQ_MAX_WAIT_SECONDS`, default 90 s per call). A full 23-section document therefore takes about 2–4 minutes on the free tier. Avoid clicking Generate/Regenerate repeatedly. For faster generation, use a template with fewer sections or upgrade to Groq's Dev tier. Tuning variables: `AI_SECTIONS_PER_CALL` (default 4), `AI_MAX_REFERENCE_CHARS` (default 6000).
+
 ## 5. Test
 **Admin → Settings → Send test request** makes a real, tiny Groq call and shows the latency and model.
 
