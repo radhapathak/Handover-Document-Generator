@@ -376,7 +376,7 @@ function ListEditor({ title, items, fields, onChange, disabled }: {
           </div>
         ))}
       </div>
-      <Button type="button" size="sm" variant="ghost" className="mt-1 text-brand-600" disabled={disabled} icon={Plus} onClick={() => emit([...rows, blank()])}>Add {title.replace(/s$/, "").toLowerCase()}</Button>
+      <Button type="button" size="sm" variant="ghost" className="mt-1 text-brand-600" disabled={disabled} icon={Plus} onClick={() => emit([...rows, blank()])}>Add {(title === "Categories" ? "Category" : title.replace(/s$/, "")).toLowerCase()}</Button>
     </fieldset>
   );
 }
