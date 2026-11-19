@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { FilePlus2 } from "lucide-react";
 import { Button, PageHeader } from "@/components/shared/ui";

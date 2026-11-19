@@ -61,6 +61,12 @@ async function flow(mode, base, creds) {
     check(tag("employee dashboard renders KPIs"), await p.isVisible("text=Pending Approvals"));
     await p.screenshot({ path: path.join(OUT, `${mode}-employee-dashboard.png`) });
 
+    for (const pg of ["/employee/documents", "/employee/new-request", "/employee/assistant", "/employee/kt-plans"]) {
+      await p.goto(`${base}${pg}`);
+      await p.waitForLoadState("networkidle");
+      const crashed = await p.isVisible("text=This page couldn’t load") || await p.isVisible("text=Application error");
+      check(tag(`page renders: ${pg}`), !crashed);
+    }
     await p.goto(`${base}/admin/dashboard`);
     await p.waitForURL(/employee\/dashboard/);
     check(tag("employee cannot open the admin portal"), p.url().includes("/employee/dashboard"));
@@ -189,6 +195,12 @@ async function flow(mode, base, creds) {
     await p.waitForSelector(".recharts-surface");
     await p.screenshot({ path: path.join(OUT, `${mode}-admin-dashboard.png`) });
     check(tag("admin dashboard renders charts"), true);
+    for (const pg of ["/admin/approvals", "/admin/documents", "/admin/employees", "/admin/projects", "/admin/templates", "/admin/analytics", "/admin/ai-activity", "/admin/settings", "/admin/kt-plans"]) {
+      await p.goto(`${base}${pg}`);
+      await p.waitForLoadState("networkidle");
+      const crashed = await p.isVisible("text=This page couldn’t load") || await p.isVisible("text=Application error");
+      check(tag(`page renders: ${pg}`), !crashed);
+    }
     await p.goto(`${base}/admin/approvals`);
     await p.click("text=Change Management — Technical Handover");
     await p.waitForURL(/admin\/documents\//);
