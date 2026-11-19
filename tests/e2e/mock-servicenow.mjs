@@ -6,8 +6,8 @@ import crypto from "node:crypto";
 
 const port = Number(process.env.MOCK_SN_PORT || 4020);
 const CLIENT = { id: "test-client", secret: "test-secret" };
-const USERS = { integration: "int-pass", "priya.sharma": "pw-priya", "meera.nair": "pw-meera" };
-const TABLES = ["project", "module_configuration", "document_request", "generated_document", "document_version", "document_approval", "employee_profile", "document_template", "ai_generation_log"].map((t) => `x_hai_${t}`);
+const USERS = { integration: "int-pass", "priya.sharma": "pw-priya", "meera.nair": "pw-meera", "rahul.verma": "pw-rahul" };
+const TABLES = ["project", "module_configuration", "document_request", "generated_document", "document_version", "document_approval", "employee_profile", "document_template", "ai_generation_log", "kt_plan", "kt_task"].map((t) => `x_hai_${t}`);
 const db = Object.fromEntries([...TABLES, "sys_user"].map((t) => [t, new Map()]));
 const attachments = [];
 const tokens = new Map();
@@ -19,11 +19,13 @@ const id = () => crypto.randomBytes(16).toString("hex");
 function insert(table, values) {
   const r = { sys_id: id(), sys_created_on: now(), sys_updated_on: now(), ...values };
   if (table === "x_hai_document_request" && !r.number) r.number = `HDR${String(++counter).padStart(7, "0")}`;
+  if (table === "x_hai_kt_plan" && !r.number) r.number = `KTP${String(++counter).padStart(7, "0")}`;
   db[table].set(r.sys_id, r);
   return r;
 }
 insert("x_hai_employee_profile", { user_name: "priya.sharma", full_name: "Priya Sharma", email: "priya@example.com", department: "ITSM", job_title: "Developer", role: "employee", active: "true" });
 insert("x_hai_employee_profile", { user_name: "meera.nair", full_name: "Meera Nair", email: "meera@example.com", department: "Governance", job_title: "Platform Owner", role: "admin", active: "true" });
+insert("x_hai_employee_profile", { user_name: "rahul.verma", full_name: "Rahul Verma", email: "rahul@example.com", department: "HR Tech", job_title: "Analyst", role: "employee", active: "true" });
 insert("x_hai_project", { name: "Change Enablement", project_id: "PRJ-2001", application_name: "ServiceNow ITSM", department: "ITSM", status: "active" });
 insert("x_hai_document_template", { name: "Standard Module Handover", document_type: "Technical Handover", sections_json: JSON.stringify(["executive_summary", "module_overview", "categories", "business_rules", "workflow_routing", "assignment_groups", "approval_process", "notifications", "testing_scenarios", "troubleshooting", "faq", "handover_checklist"]), manual_effort_hours: "16", active: "true", instructions: "" });
 

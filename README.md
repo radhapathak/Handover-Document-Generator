@@ -54,6 +54,14 @@ ServiceNow Table + Attachment APIs      Groq Chat Completions (JSON mode)
 - Analytics: documents per month, by project, by employee, pending vs approved, manual vs AI time, approval turnaround
 - AI activity log (tokens, duration, errors), and integration settings with live ServiceNow table checks and a Groq test call
 
+**Notice Period KT (employee exit / offboarding)**
+- HR starts a plan for an employee serving notice: last working day (default 30 days), successor, manager, and the modules/projects to hand over
+- A 4-week task plan is created automatically (inventory and access, KT documents per module, walkthroughs and shadowing, reverse shadowing, and asset and access removal), and HR or the manager can edit it
+- Each module gets a handover request for the leaver, written with the AI generator; successors and managers can read the linked documents
+- Countdown, progress, overdue tasks and a risk flag (high when fewer than 7 days remain with less than 70% done); banners on both dashboards
+- Successor confirms receipt, then the manager or HR gives final sign-off, which completes the plan; an AI exit summary is available
+- Data in ServiceNow tables `x_hai_kt_plan` and `x_hai_kt_task`
+
 **Document lifecycle:** `Draft → AI Generated → Under Review → Approved / Changes Requested / Rejected → Published`. The server enforces it; documents can't be edited while under review or after approval.
 
 ## Quick start (local)

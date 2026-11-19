@@ -3,7 +3,7 @@
 import { TABLES } from "../lib/servicenow/schema.ts";
 
 const prefix = process.env.SERVICENOW_TABLE_PREFIX || "x_hai";
-const SN_TYPE = { string: "String", number: "Integer", decimal: "Decimal", boolean: "True/False", json: "String (JSON)", reference: "Reference", datetime: "Date/Time", choice: "Choice" };
+const SN_TYPE = { string: "String", number: "Integer", decimal: "Decimal", boolean: "True/False", json: "String (JSON)", reference: "Reference", datetime: "Date/Time", date: "Date", choice: "Choice" };
 let out = "";
 let n = 1;
 for (const [key, t] of Object.entries(TABLES)) {

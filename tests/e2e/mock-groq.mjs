@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
   let data = "";
   req.on("data", (c) => (data += c));
   req.on("end", () => {
-    if (req.url !== "/chat/completions" || req.headers.authorization !== "Bearer test-groq-key") {
+    if (req.url !== "/chat/completions" || req.headers.authorization !== "Bearer gsk_testgroqkey") {
       res.writeHead(req.url === "/chat/completions" ? 401 : 404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: { message: "bad request" } }));
     }

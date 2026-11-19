@@ -820,6 +820,242 @@
     "defaultValue": ""
    }
   ]
+ },
+ {
+  "key": "kt_plan",
+  "label": "KT Plan",
+  "autoNumber": "KTP",
+  "columns": [
+   {
+    "element": "number",
+    "label": "Number",
+    "type": "string",
+    "maxLength": 40,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "employee",
+    "label": "Leaving Employee",
+    "type": "reference",
+    "maxLength": 0,
+    "reference": "employee_profile",
+    "choices": [],
+    "mandatory": true,
+    "defaultValue": ""
+   },
+   {
+    "element": "successor",
+    "label": "Successor",
+    "type": "reference",
+    "maxLength": 0,
+    "reference": "employee_profile",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "manager",
+    "label": "Manager",
+    "type": "reference",
+    "maxLength": 0,
+    "reference": "employee_profile",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "notice_start",
+    "label": "Notice Start",
+    "type": "glide_date",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": true,
+    "defaultValue": ""
+   },
+   {
+    "element": "last_working_day",
+    "label": "Last Working Day",
+    "type": "glide_date",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": true,
+    "defaultValue": ""
+   },
+   {
+    "element": "status",
+    "label": "Status",
+    "type": "string",
+    "maxLength": 100,
+    "reference": "",
+    "choices": [
+     "active",
+     "completed",
+     "cancelled"
+    ],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "notes",
+    "label": "Notes",
+    "type": "string",
+    "maxLength": 4000,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "summary_html",
+    "label": "AI Exit Summary",
+    "type": "string",
+    "maxLength": 65000,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "successor_signed_on",
+    "label": "Successor Signed On",
+    "type": "glide_date_time",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "manager_signed_on",
+    "label": "Manager Signed On",
+    "type": "glide_date_time",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "completed_on",
+    "label": "Completed On",
+    "type": "glide_date_time",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   }
+  ]
+ },
+ {
+  "key": "kt_task",
+  "label": "KT Task",
+  "autoNumber": "",
+  "columns": [
+   {
+    "element": "kt_plan",
+    "label": "KT Plan",
+    "type": "reference",
+    "maxLength": 0,
+    "reference": "kt_plan",
+    "choices": [],
+    "mandatory": true,
+    "defaultValue": ""
+   },
+   {
+    "element": "title",
+    "label": "Title",
+    "type": "string",
+    "maxLength": 300,
+    "reference": "",
+    "choices": [],
+    "mandatory": true,
+    "defaultValue": ""
+   },
+   {
+    "element": "description",
+    "label": "Description",
+    "type": "string",
+    "maxLength": 4000,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "week",
+    "label": "Week",
+    "type": "integer",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "due_date",
+    "label": "Due Date",
+    "type": "glide_date",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "owner_role",
+    "label": "Owner",
+    "type": "string",
+    "maxLength": 100,
+    "reference": "",
+    "choices": [
+     "leaver",
+     "successor",
+     "manager"
+    ],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "status",
+    "label": "Status",
+    "type": "string",
+    "maxLength": 100,
+    "reference": "",
+    "choices": [
+     "todo",
+     "in_progress",
+     "done"
+    ],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "document_request",
+    "label": "Document Request",
+    "type": "reference",
+    "maxLength": 0,
+    "reference": "document_request",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   },
+   {
+    "element": "completed_on",
+    "label": "Completed On",
+    "type": "glide_date_time",
+    "maxLength": 0,
+    "reference": "",
+    "choices": [],
+    "mandatory": false,
+    "defaultValue": ""
+   }
+  ]
  }
 ];
   var DEFAULT_SECTIONS = ["executive_summary","project_overview","module_overview","business_purpose","scope","functional_description","technical_architecture","configuration_details","categories","business_rules","workflow_routing","assignment_groups","approval_process","roles_responsibilities","integrations","exception_handling","notifications","testing_scenarios","troubleshooting","known_issues","faq","handover_checklist","future_recommendations"];

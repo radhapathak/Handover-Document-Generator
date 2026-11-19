@@ -3,7 +3,7 @@
  * SERVICE_NOW_SETUP.md is generated from this file (npm run schema:docs),
  * so the setup guide and the code can never drift apart.
  */
-export type FieldType = "string" | "number" | "decimal" | "boolean" | "json" | "reference" | "datetime" | "choice";
+export type FieldType = "string" | "number" | "decimal" | "boolean" | "json" | "reference" | "datetime" | "date" | "choice";
 
 export interface FieldSpec {
   column: string;
@@ -25,7 +25,9 @@ export type TableKey =
   | "document_approval"
   | "employee_profile"
   | "document_template"
-  | "ai_generation_log";
+  | "ai_generation_log"
+  | "kt_plan"
+  | "kt_task";
 
 export const DOC_STATES = [
   "draft",
@@ -36,6 +38,10 @@ export const DOC_STATES = [
   "approved",
   "published",
 ];
+
+export const KT_PLAN_STATES = ["active", "completed", "cancelled"];
+export const KT_TASK_STATES = ["todo", "in_progress", "done"];
+export const KT_OWNERS = ["leaver", "successor", "manager"];
 
 export const TABLES: Record<TableKey, { label: string; autoNumber?: string; fields: Record<string, FieldSpec> }> = {
   employee_profile: {
@@ -154,6 +160,38 @@ export const TABLES: Record<TableKey, { label: string; autoNumber?: string; fiel
       durationMs: { column: "duration_ms", label: "Duration (ms)", type: "number" },
       status: { column: "status", label: "Status", type: "choice", choices: ["success", "error"] },
       errorMessage: { column: "error_message", label: "Error Message", type: "string", maxLength: 4000 },
+    },
+  },
+  kt_plan: {
+    label: "KT Plan",
+    autoNumber: "KTP",
+    fields: {
+      number: { column: "number", label: "Number", type: "string", maxLength: 40 },
+      employeeId: { column: "employee", label: "Leaving Employee", type: "reference", reference: "employee_profile", mandatory: true, indexed: true },
+      successorId: { column: "successor", label: "Successor", type: "reference", reference: "employee_profile", indexed: true },
+      managerId: { column: "manager", label: "Manager", type: "reference", reference: "employee_profile", indexed: true },
+      noticeStart: { column: "notice_start", label: "Notice Start", type: "date", mandatory: true },
+      lastWorkingDay: { column: "last_working_day", label: "Last Working Day", type: "date", mandatory: true },
+      status: { column: "status", label: "Status", type: "choice", choices: KT_PLAN_STATES, indexed: true },
+      notes: { column: "notes", label: "Notes", type: "string", maxLength: 4000 },
+      summary: { column: "summary_html", label: "AI Exit Summary", type: "string", maxLength: 65000 },
+      successorSignedAt: { column: "successor_signed_on", label: "Successor Signed On", type: "datetime" },
+      managerSignedAt: { column: "manager_signed_on", label: "Manager Signed On", type: "datetime" },
+      completedAt: { column: "completed_on", label: "Completed On", type: "datetime" },
+    },
+  },
+  kt_task: {
+    label: "KT Task",
+    fields: {
+      planId: { column: "kt_plan", label: "KT Plan", type: "reference", reference: "kt_plan", mandatory: true, indexed: true },
+      title: { column: "title", label: "Title", type: "string", maxLength: 300, mandatory: true },
+      description: { column: "description", label: "Description", type: "string", maxLength: 4000 },
+      week: { column: "week", label: "Week", type: "number" },
+      dueDate: { column: "due_date", label: "Due Date", type: "date" },
+      owner: { column: "owner_role", label: "Owner", type: "choice", choices: KT_OWNERS },
+      status: { column: "status", label: "Status", type: "choice", choices: KT_TASK_STATES, indexed: true },
+      requestId: { column: "document_request", label: "Document Request", type: "reference", reference: "document_request" },
+      completedAt: { column: "completed_on", label: "Completed On", type: "datetime" },
     },
   },
 };

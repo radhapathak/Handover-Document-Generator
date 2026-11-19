@@ -12,7 +12,7 @@ Follow these steps on a **development** instance first (a free Personal Develope
 2. Name: `HandoverAI`. ServiceNow assigns the scope, for example `x_hai` on some instances, or `x_<vendor>_hai` (such as `x_12345_hai`) on most.
 3. Note the scope. Tables in a scoped app are named `<scope>_<table>`, so set **`SERVICENOW_TABLE_PREFIX`** to your scope (for example `x_12345_hai`). The guide below uses the default `x_hai`.
 
-## 2. Create the nine tables
+## 2. Create the eleven tables
 
 Create each table in the HandoverAI scope (**Studio → Create Application File → Table**). For every table:
 
@@ -147,10 +147,39 @@ Auto-number: prefix **HDR**, 7 digits (Table → Controls → Auto-number).
 | Status | `status` | Choice |  | `success`, `error` |  |  |
 | Error Message | `error_message` | String | 4000 |  |  |  |
 
-(node:5130) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/user/handover-document-generator/lib/servicenow/schema.ts is not specified and it doesn't parse as CommonJS.
-Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
-To eliminate this warning, add "type": "module" to /home/user/handover-document-generator/package.json.
-(Use `node --trace-warnings ...` to show where the warning was created)
+### 10. KT Plan — `x_hai_kt_plan`
+
+Auto-number: prefix **KTP**, 7 digits (Table → Controls → Auto-number).
+
+| Column label | Column name | Type | Max length | Reference / Choices | Mandatory | Index |
+|---|---|---|---|---|---|---|
+| Number | `number` | String | 40 |  |  |  |
+| Leaving Employee | `employee` | Reference |  | `x_hai_employee_profile` | Yes | Yes |
+| Successor | `successor` | Reference |  | `x_hai_employee_profile` |  | Yes |
+| Manager | `manager` | Reference |  | `x_hai_employee_profile` |  | Yes |
+| Notice Start | `notice_start` | Date |  |  | Yes |  |
+| Last Working Day | `last_working_day` | Date |  |  | Yes |  |
+| Status | `status` | Choice |  | `active`, `completed`, `cancelled` |  | Yes |
+| Notes | `notes` | String | 4000 |  |  |  |
+| AI Exit Summary | `summary_html` | String | 65000 |  |  |  |
+| Successor Signed On | `successor_signed_on` | Date/Time |  |  |  |  |
+| Manager Signed On | `manager_signed_on` | Date/Time |  |  |  |  |
+| Completed On | `completed_on` | Date/Time |  |  |  |  |
+
+### 11. KT Task — `x_hai_kt_task`
+
+| Column label | Column name | Type | Max length | Reference / Choices | Mandatory | Index |
+|---|---|---|---|---|---|---|
+| KT Plan | `kt_plan` | Reference |  | `x_hai_kt_plan` | Yes | Yes |
+| Title | `title` | String | 300 |  | Yes |  |
+| Description | `description` | String | 4000 |  |  |  |
+| Week | `week` | Integer |  |  |  |  |
+| Due Date | `due_date` | Date |  |  |  |  |
+| Owner | `owner_role` | Choice |  | `leaver`, `successor`, `manager` |  |  |
+| Status | `status` | Choice |  | `todo`, `in_progress`, `done` |  | Yes |
+| Document Request | `document_request` | Reference |  | `x_hai_document_request` |  |  |
+| Completed On | `completed_on` | Date/Time |  |  |  |  |
+
 ### Relationships
 
 ```
@@ -160,6 +189,7 @@ Project ─┬─< Module Configuration ─< Document Request ─< Generated Doc
 Employee Profile ─< (owner, requested_by, author, actor, created_by_profile, user)
 Document Template ─< Document Request
 Document Request / Generated Document ─< AI Generation Log
+Employee Profile ─< KT Plan (employee, successor, manager) ─< KT Task ─ Document Request (module KT document)
 Document Request ─< sys_attachment (reference uploads)
 ```
 
@@ -168,7 +198,7 @@ Document Request ─< sys_attachment (reference uploads)
 The app uses **one integration user**. Users never get direct table access, and the app enforces employee/admin permissions on the server. Lock the integration user down to these tables only:
 
 1. **Create a role:** `x_hai.integration` (in Studio: Create Application File → Role).
-2. **Create ACLs** for every one of the nine tables (Studio → Create Application File → Access Control):
+2. **Create ACLs** for every one of the eleven tables (Studio → Create Application File → Access Control):
 
    | Operation | Name | Requires role |
    |---|---|---|
@@ -235,7 +265,7 @@ Turn on auditing so ServiceNow records field changes for compliance. Set the dic
 ## 9. Verify the connection
 
 1. Set the environment variables (see `.env.example`) and start the app.
-2. Sign in as your admin and open **Admin → Settings**. Each of the nine tables should show a green tick.
+2. Sign in as your admin and open **Admin → Settings**. Each of the eleven tables should show a green tick.
 3. Common errors:
 
 | Message | Fix |

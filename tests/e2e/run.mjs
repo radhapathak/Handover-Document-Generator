@@ -251,13 +251,65 @@ async function flow(mode, base, creds) {
     await p.goto(`${base}/admin/ai-activity`);
     await p.waitForSelector("text=generate-sections");
     check(tag("AI calls logged"), true);
+
+    // --- Notice-period KT plan: HR starts a plan for Priya, Rahul is successor, Meera signs off
+    await p.goto(`${base}/admin/kt-plans`);
+    await p.click("button:has-text('Start KT plan')");
+    await p.waitForSelector("#employeeId option:has-text('Priya Sharma')", { state: "attached" });
+    await p.selectOption("#employeeId", { label: "Priya Sharma (priya.sharma)" });
+    await p.selectOption("#successorId", { label: "Rahul Verma (rahul.verma)" });
+    await p.selectOption("#managerId", { label: "Meera Nair (meera.nair)" });
+    await p.fill("[aria-label='Module 1 name']", "Change Management Notice KT");
+    const proj = await p.$$eval("[aria-label='Module 1 project'] option", (os) => os.map((o) => o.value).filter(Boolean)[0]);
+    await p.selectOption("[aria-label='Module 1 project']", proj);
+    await p.click("div[role=dialog] button:has-text('Create plan')");
+    await p.waitForURL(/admin\/kt-plans\/[A-Za-z0-9_]+$/, { timeout: 20000 });
+    const planId = p.url().split("/").pop();
+    await p.waitForSelector("text=Week 4");
+    check(tag("KT plan created with 4-week task list"), (await p.isVisible("text=/\\d+ days left/")));
+    await p.screenshot({ path: path.join(OUT, `${mode}-kt-plan.png`), fullPage: true });
     await adm2.ctx.close();
+
+    const leaver = await login(browser, base, ...creds.employee);
+    p = leaver.page;
+    await p.waitForSelector("text=Your handover");
+    check(tag("leaver sees notice-period banner on dashboard"), true);
+    await p.goto(`${base}/employee/kt-plans/${planId}`);
+    await p.waitForSelector("text=Fill in & generate");
+    check(tag("leaver gets link to fill in the module KT document"), true);
+    const firstSelect = p.locator("select[aria-label^='Status of']").first();
+    await firstSelect.selectOption("done");
+    await p.waitForSelector("text=/1 of \\d+ tasks done/");
+    check(tag("leaver marks a task done (progress updates)"), true);
+    const leaverEdit = await p.evaluate(async (id) => {
+      const b = await (await fetch(`/api/kt-plans/${id}`)).json();
+      return (await fetch(`/api/kt-tasks/${b.tasks[0].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "Hacked" }) })).status;
+    }, planId);
+    check(tag("leaver cannot rename tasks (403)"), leaverEdit === 403);
+    await leaver.ctx.close();
+
+    const succ = await login(browser, base, ...creds.successor);
+    p = succ.page;
+    await p.goto(`${base}/employee/kt-plans/${planId}`);
+    await p.click("button:has-text('I received the knowledge')");
+    await p.waitForSelector("text=Handover confirmed.");
+    check(tag("successor confirms handover"), true);
+    await succ.ctx.close();
+
+    const adm3 = await login(browser, base, ...creds.admin);
+    p = adm3.page;
+    await p.goto(`${base}/admin/kt-plans/${planId}`);
+    await p.click("button:has-text('Final sign-off')");
+    await p.waitForSelector("text=Final sign-off recorded");
+    await p.waitForSelector("header ~ main >> text=Completed");
+    check(tag("manager final sign-off completes the plan"), true);
+    await adm3.ctx.close();
   } finally {
     await browser.close();
   }
 }
 
-const BASE_ENV = { AUTH_SECRET: "e2e-secret-e2e-secret-e2e-secret-123456", GROQ_API_KEY: "test-groq-key", GROQ_BASE_URL: "http://127.0.0.1:4010", GROQ_MODEL: "mock-llama", AI_RATE_LIMIT_PER_MINUTE: "100", HAI_ALLOW_HTTP_LOCALHOST: "true" };
+const BASE_ENV = { AUTH_SECRET: "e2e-secret-e2e-secret-e2e-secret-123456", GROQ_API_KEY: "gsk_testgroqkey", GROQ_BASE_URL: "http://127.0.0.1:4010", GROQ_MODEL: "mock-llama", AI_RATE_LIMIT_PER_MINUTE: "100", HAI_ALLOW_HTTP_LOCALHOST: "true" };
 
 try {
   start("node", ["tests/e2e/mock-groq.mjs"], {}, "mock-groq");
@@ -273,7 +325,9 @@ try {
     const app = start("npx", ["next", "start", "-p", String(port)], env, `app-${mode}`);
     await waitFor(`http://127.0.0.1:${port}/login`);
     console.log(`\n=== ${mode.toUpperCase()} MODE ===`);
-    const creds = mode === "demo" ? { employee: ["priya.sharma", "demo-pass"], admin: ["meera.nair", "demo-pass"] } : { employee: ["priya.sharma", "pw-priya"], admin: ["meera.nair", "pw-meera"] };
+    const creds = mode === "demo"
+      ? { employee: ["priya.sharma", "demo-pass"], admin: ["meera.nair", "demo-pass"], successor: ["rahul.verma", "demo-pass"] }
+      : { employee: ["priya.sharma", "pw-priya"], admin: ["meera.nair", "pw-meera"], successor: ["rahul.verma", "pw-rahul"] };
     await flow(mode, `http://localhost:${port}`, creds);
     app.kill();
   }

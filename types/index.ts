@@ -226,3 +226,40 @@ export interface SessionUser {
 }
 
 export type DataMode = "servicenow" | "demo" | "unconfigured";
+
+export type KtPlanStatus = "active" | "completed" | "cancelled";
+export type KtTaskStatus = "todo" | "in_progress" | "done";
+export type KtOwner = "leaver" | "successor" | "manager";
+
+export interface KtPlan {
+  id: string;
+  number: string;
+  employeeId: string;
+  successorId: string;
+  managerId: string;
+  noticeStart: string;
+  lastWorkingDay: string;
+  status: KtPlanStatus;
+  notes: string;
+  summary: string;
+  successorSignedAt: string;
+  managerSignedAt: string;
+  completedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KtTask {
+  id: string;
+  planId: string;
+  title: string;
+  description: string;
+  week: number;
+  dueDate: string;
+  owner: KtOwner;
+  status: KtTaskStatus;
+  requestId: string;
+  completedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}

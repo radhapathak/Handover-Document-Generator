@@ -148,3 +148,42 @@ export const chatInput = z.object({
     .min(1)
     .max(30),
 });
+
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+
+export const ktPlanInput = z.object({
+  employeeId: id,
+  successorId: id.optional(),
+  managerId: id.optional(),
+  noticeStart: day,
+  lastWorkingDay: day,
+  notes: z.string().trim().max(4000).optional().default(""),
+  modules: z
+    .array(z.object({ moduleName: z.string().trim().min(2).max(200), projectId: id }))
+    .min(1, "Add at least one module or project to hand over")
+    .max(20),
+});
+
+export const ktPlanPatch = z.object({
+  successorId: id.or(z.literal("")).optional(),
+  managerId: id.or(z.literal("")).optional(),
+  lastWorkingDay: day.optional(),
+  notes: z.string().trim().max(4000).optional(),
+  status: z.enum(["active", "cancelled"]).optional(),
+});
+
+export const ktTaskInput = z.object({
+  title: z.string().trim().min(2).max(300),
+  description: z.string().trim().max(4000).optional().default(""),
+  dueDate: day,
+  owner: z.enum(["leaver", "successor", "manager"]),
+  week: z.number().int().min(1).max(12),
+});
+
+export const ktTaskPatch = z.object({
+  status: z.enum(["todo", "in_progress", "done"]).optional(),
+  title: z.string().trim().min(2).max(300).optional(),
+  description: z.string().trim().max(4000).optional(),
+  dueDate: day.optional(),
+  owner: z.enum(["leaver", "successor", "manager"]).optional(),
+});

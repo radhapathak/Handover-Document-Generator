@@ -1,6 +1,7 @@
 import type { TableStore } from "@/lib/store/types";
 import { tableName, toRecord, toSnDate, type TableKey } from "@/lib/servicenow/schema";
 import { AI_SECTIONS, ALL_SECTION_KEYS } from "@/lib/documents/sections";
+import { addDays, buildPlanTasks } from "@/lib/kt/template";
 import type { DocContent, DocState, ModuleConfigInput } from "@/types";
 
 /**
@@ -192,4 +193,18 @@ export async function seedDemoData(store: TableStore) {
       created
     );
   }
+
+  // Sample notice-period KT plan: Ananya is leaving, Priya takes over, Meera signs off.
+  const start = daysAgo(18).slice(0, 10);
+  const lwd = addDays(start, 30);
+  const planRec = await ins(
+    "kt_plan",
+    { employeeId: ids.emp_ananya, successorId: ids.emp_priya, managerId: ids.adm_meera, noticeStart: start, lastWorkingDay: lwd, status: "active", notes: "Sample plan (demo data). Ananya resigned; Priya takes over Major Incident tooling." },
+    daysAgo(18)
+  );
+  const planned = buildPlanTasks(start, lwd, ["Major Incident Workbench"]);
+  for (const [i, t] of planned.entries()) {
+    await ins("kt_task", { planId: planRec.sys_id, title: t.title, description: t.description, owner: t.owner, week: t.week, dueDate: t.dueDate, status: i < 4 ? "done" : i === 4 ? "in_progress" : "todo", requestId: "" }, daysAgo(18));
+  }
 }
+

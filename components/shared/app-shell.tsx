@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, FilePlus2, FileText, Sparkles, Users, FolderKanban, ClipboardCheck, BarChart3, LayoutTemplate, Activity, Settings,
-  PanelLeftClose, PanelLeftOpen, LogOut, ChevronDown, Menu, Database, AlertTriangle, FlaskConical,
+  PanelLeftClose, PanelLeftOpen, LogOut, ChevronDown, Menu, Database, AlertTriangle, FlaskConical, UserMinus,
 } from "lucide-react";
 import { api } from "@/lib/client/api";
 import { cx } from "@/components/shared/ui";
@@ -14,11 +14,13 @@ const EMPLOYEE_NAV = [
   { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/employee/new-request", label: "New Handover", icon: FilePlus2 },
   { href: "/employee/documents", label: "My Documents", icon: FileText },
+  { href: "/employee/kt-plans", label: "My KT Plans", icon: UserMinus },
   { href: "/employee/assistant", label: "AI Assistant", icon: Sparkles, ai: true },
 ];
 const ADMIN_NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck },
+  { href: "/admin/kt-plans", label: "Notice Period KT", icon: UserMinus },
   { href: "/admin/documents", label: "All Documents", icon: FileText },
   { href: "/admin/employees", label: "Employees", icon: Users },
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },

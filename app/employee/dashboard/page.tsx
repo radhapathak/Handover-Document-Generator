@@ -5,6 +5,7 @@ import { FolderKanban, FileText, FilePen, Clock, CheckCircle2, Timer, FilePlus2,
 import { useApi, fmtDate } from "@/lib/client/api";
 import { Button, Card, EmptyState, ErrorState, KpiCard, PageHeader, PageSkeleton, StateBadge } from "@/components/shared/ui";
 import type { DocState } from "@/types";
+import { KtBanner } from "@/components/kt/kt-banner";
 
 interface Dash {
   kpis: { myProjects: number; documentsGenerated: number; draftDocuments: number; pendingApprovals: number; approvedDocuments: number; hoursSaved: number };
@@ -29,6 +30,7 @@ export default function EmployeeDashboard() {
           </>
         }
       />
+      <KtBanner area="employee" />
       {loading && !data ? <PageSkeleton /> : error ? <ErrorState message={error} onRetry={reload} /> : data && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">

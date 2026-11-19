@@ -35,7 +35,7 @@ function table(name: string) {
 
 export const newSysId = () => randomBytes(16).toString("hex");
 
-const AUTO_NUMBER: Record<string, string> = { document_request: "HDR" };
+const AUTO_NUMBER: Record<string, string> = { document_request: "HDR", kt_plan: "KTP" };
 
 export const memoryStore: TableStore = {
   kind: "demo",

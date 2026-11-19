@@ -6,6 +6,7 @@ import { canTransition, estimateHoursSaved, isEditable, nextState, STATE_LABELS,
 import { sanitizeSectionHtml, deriveStatus } from "@/lib/documents/html";
 import { sanitizeMermaid } from "@/lib/mermaid/sanitize";
 import { documentApprovals } from "@/lib/servicenow/approvals";
+import { canReadViaKtPlan } from "@/lib/kt/service";
 import { documentRequests, documentVersions, generatedDocuments } from "@/lib/servicenow/documents";
 import { moduleConfigurations, projects } from "@/lib/servicenow/projects";
 import { templates } from "@/lib/servicenow/templates";
@@ -25,7 +26,10 @@ export async function loadGenerationContext(user: SessionUser, requestId: string
 export async function loadDocument(user: SessionUser, id: string): Promise<GeneratedDocument> {
   const doc = await generatedDocuments.get(id);
   if (!doc) throw new HttpError(404, "Document not found.");
-  assertCanAccessDocument(user, doc);
+  if (user.role !== "admin" && doc.authorId !== user.id) {
+    // Successors and managers on a notice-period KT plan may read (not edit) the linked documents.
+    if (!(await canReadViaKtPlan(user.id, doc.requestId))) throw new HttpError(404, "Document not found.");
+  }
   return doc;
 }
 

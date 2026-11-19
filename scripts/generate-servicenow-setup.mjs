@@ -6,9 +6,9 @@ import fs from "node:fs";
 import { TABLES } from "../lib/servicenow/schema.ts";
 import { AI_SECTIONS } from "../lib/documents/sections.ts";
 
-const TYPE = { string: "string", json: "string", number: "integer", decimal: "decimal", boolean: "boolean", reference: "reference", datetime: "glide_date_time", choice: "string" };
+const TYPE = { string: "string", json: "string", number: "integer", decimal: "decimal", boolean: "boolean", reference: "reference", datetime: "glide_date_time", date: "glide_date", choice: "string" };
 // Create referenced tables first.
-const ORDER = ["employee_profile", "document_template", "project", "module_configuration", "document_request", "generated_document", "document_version", "document_approval", "ai_generation_log"];
+const ORDER = ["employee_profile", "document_template", "project", "module_configuration", "document_request", "generated_document", "document_version", "document_approval", "ai_generation_log", "kt_plan", "kt_task"];
 
 const tables = ORDER.map((key) => {
   const t = TABLES[key];
