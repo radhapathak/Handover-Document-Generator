@@ -198,6 +198,9 @@ async function snFetch(path: string, init: RequestInit = {}, retried = false): P
     try {
       const j = JSON.parse(text);
       if (j?.error?.message) message = `ServiceNow: ${j.error.message}`;
+      if (/Invalid table/i.test(j?.error?.message || "")) {
+        message += ". This table has not been created yet: run the latest setup script (servicenow/setup-handoverai.js) in ServiceNow as described in SERVICE_NOW_SETUP.md.";
+      }
     } catch {
       /* not JSON */
     }
