@@ -17,12 +17,17 @@ const results = [];
 const check = (name, ok, extra = "") => { results.push({ name, ok }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? " — " + extra : ""}`); if (!ok) throw new Error(`Check failed: ${name} ${extra}`); };
 
 function start(cmd, args, env, label) {
-  const p = spawn(cmd, args, { cwd: ROOT, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+  // detached: each server gets its own process group, so we can stop it and its children (npx → next).
+  const p = spawn(cmd, args, { cwd: ROOT, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"], detached: true });
   p.stdout.on("data", (d) => process.env.E2E_VERBOSE && process.stdout.write(`[${label}] ${d}`));
   p.stderr.on("data", (d) => fs.appendFileSync(path.join(OUT, `${label}.log`), d));
   procs.push(p);
   return p;
 }
+function stop(p) {
+  try { process.kill(-p.pid, "SIGTERM"); } catch { try { p.kill(); } catch { /* already gone */ } }
+}
+
 async function waitFor(url) {
   for (let i = 0; i < 60; i++) { try { const r = await fetch(url); if (r.status < 500) return; } catch {} await sleep(500); }
   throw new Error(`Timed out waiting for ${url}`);
@@ -345,12 +350,14 @@ try {
       ? { employee: ["priya.sharma", "demo-pass"], admin: ["meera.nair", "demo-pass"], successor: ["rahul.verma", "demo-pass"] }
       : { employee: ["priya.sharma", "pw-priya"], admin: ["meera.nair", "pw-meera"], successor: ["rahul.verma", "pw-rahul"] };
     await flow(mode, `http://localhost:${port}`, creds);
-    app.kill();
+    stop(app);
   }
   console.log(`\n${results.filter((r) => r.ok).length}/${results.length} checks passed`);
 } catch (e) {
   console.error("\nE2E FAILED:", e.message);
   process.exitCode = 1;
 } finally {
-  for (const p of procs) p.kill();
+  for (const p of procs) stop(p);
+  // Exit explicitly so a stray handle can never keep the runner alive.
+  setTimeout(() => process.exit(process.exitCode || 0), 500);
 }
