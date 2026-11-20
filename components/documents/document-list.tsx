@@ -17,7 +17,7 @@ export function DocumentList({ area }: { area: "employee" | "admin" }) {
   const router = useRouter();
   const { data, error, loading, reload } = useApi<{ items: Row[] }>("/api/requests");
   const cols: Column<Row>[] = [
-    { key: "number", header: "Request", render: (r) => <span className="font-mono text-[12px]">{r.number}</span>, sortValue: (r) => r.number },
+    { key: "number", header: "Handover ID", render: (r) => <span className="font-mono text-[12px]">{r.number}</span>, sortValue: (r) => r.number },
     { key: "title", header: "Title", render: (r) => <span className="font-medium">{r.title}</span>, sortValue: (r) => r.title },
     { key: "project", header: "Project", render: (r) => r.projectName, sortValue: (r) => r.projectName },
     ...(area === "admin" ? [{ key: "by", header: "Employee", render: (r: Row) => r.requestedByName, sortValue: (r: Row) => r.requestedByName }] : []),
@@ -36,8 +36,8 @@ export function DocumentList({ area }: { area: "employee" | "admin" }) {
             { key: "state", label: "Status", options: [{ value: "none", label: "Not generated" }, ...STATES.map((s) => ({ value: s, label: stateLabel(s) }))], test: (r, v) => (v === "none" ? !r.documentState : r.documentState === v) },
             { key: "project", label: "Project", options: [...new Set((data?.items || []).map((r) => r.projectName))].map((p) => ({ value: p, label: p })), test: (r, v) => r.projectName === v },
           ]}
-          emptyTitle="No documentation requests"
-          emptyMessage={area === "employee" ? "Create a new handover request to generate your first document." : undefined}
+          emptyTitle="No module handovers yet"
+          emptyMessage={area === "employee" ? "Start a new module handover to generate your first document." : undefined}
           onRowClick={(r) => router.push(r.documentId ? `/${area}/documents/${r.documentId}` : area === "employee" ? `/employee/new-request?id=${r.id}` : `/admin/documents`)}
         />
       )}

@@ -38,8 +38,23 @@ export async function findDocumentForRequest(requestId: string) {
   return items[0] || null;
 }
 
+/** Requests currently being generated on this server instance (prevents double clicks starting two runs). */
+const generating = new Set<string>();
+
 /** Full AI generation: analysis → sections (batched) → flowchart. Stores the document and a new version. */
 export async function generateDocument(user: SessionUser, requestId: string): Promise<GeneratedDocument> {
+  if (generating.has(requestId)) {
+    throw new HttpError(409, "This module handover is already being generated. Please wait for it to finish.");
+  }
+  generating.add(requestId);
+  try {
+    return await runGeneration(user, requestId);
+  } finally {
+    generating.delete(requestId);
+  }
+}
+
+async function runGeneration(user: SessionUser, requestId: string): Promise<GeneratedDocument> {
   const g = await loadGenerationContext(user, requestId);
   const existing = await findDocumentForRequest(requestId);
   if (existing) {

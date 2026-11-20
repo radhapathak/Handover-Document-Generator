@@ -28,7 +28,7 @@ export function PlanForm({ open, onClose, onCreated }: { open: boolean; onClose:
       const r = await api<{ item: { id: string } }>("/api/kt-plans", {
         body: { ...f, successorId: f.successorId || undefined, managerId: f.managerId || undefined, modules: modules.filter((m) => m.moduleName.trim()) },
       });
-      toast.success("KT plan created with a task list and a handover request per module.");
+      toast.success("Exit handover created: a 4-week task plan and a module handover for each module.");
       onCreated(r.item.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -47,7 +47,7 @@ export function PlanForm({ open, onClose, onCreated }: { open: boolean; onClose:
   );
 
   return (
-    <Modal wide open={open} onClose={onClose} title="Start notice-period KT plan"
+    <Modal wide open={open} onClose={onClose} title="Start exit handover"
       footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" loading={saving} onClick={save} disabled={!f.employeeId || !modules.some((m) => m.moduleName.trim() && m.projectId)}>Create plan</Button></>}>
       <div className="grid gap-4 md:grid-cols-3">
         {person("employeeId", "Employee on notice", true)}
@@ -58,7 +58,7 @@ export function PlanForm({ open, onClose, onCreated }: { open: boolean; onClose:
       </div>
       <fieldset className="mt-5">
         <legend className="mb-2 text-[13px] font-semibold">Modules / projects to hand over</legend>
-        <p className="mb-2 text-[12px] text-muted">Each module gets a handover request for the leaving employee to fill in and generate with AI, plus a walkthrough task.</p>
+        <p className="mb-2 text-[12px] text-muted">Each module gets a module handover for the leaving employee to fill in and generate with AI, plus a walkthrough task.</p>
         <div className="space-y-2">
           {modules.map((m, i) => (
             <div key={i} className="flex flex-col gap-2 rounded-md border border-line bg-surface/50 p-2 md:flex-row">

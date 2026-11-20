@@ -8,7 +8,7 @@ import { DocumentList } from "@/components/documents/document-list";
 export default function MyDocuments() {
   return (
     <>
-      <PageHeader title="My Documents" subtitle="Your documentation requests, generated documents and approval status." crumbs={[{ label: "Employee Portal", href: "/employee/dashboard" }, { label: "My Documents" }]} actions={<Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>Create New Handover</Button></Link>} />
+      <PageHeader title="My Documents" subtitle="Your module handovers: the generated documents and their approval status." crumbs={[{ label: "Employee Portal", href: "/employee/dashboard" }, { label: "My Documents" }]} actions={<Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>New Module Handover</Button></Link>} />
       <DocumentList area="employee" />
     </>
   );

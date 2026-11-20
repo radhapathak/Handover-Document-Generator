@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Save, Sparkles, Upload, SearchCheck, ChevronDown, AlertTriangle, Info, FileUp, CheckCircle2, Paperclip } from "lucide-react";
-import { api, fmtDateTime, useApi } from "@/lib/client/api";
+import { api, useApi } from "@/lib/client/api";
 import { useToast } from "@/components/shared/toast";
 import { Badge, Button, Card, ErrorState, Field, Input, Modal, PageSkeleton, Select, Textarea, cx } from "@/components/shared/ui";
 import type { AnalysisResult, ModuleConfigInput, Project, DocumentTemplate } from "@/types";
@@ -233,7 +233,7 @@ export function RequestForm({ requestId }: { requestId?: string }) {
             </Field>
             <Field label="Template" htmlFor="tpl" hint="Controls which sections are generated.">
               <Select id="tpl" value={head.templateId} onChange={(e) => setH("templateId", e.target.value)} disabled={locked}>
-                {templatesApi.data?.items.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.sections.length} sections)</option>)}
+                {templatesApi.data?.items.map((t) => <option key={t.id} value={t.id}>{t.name} ({!t.sections.length || t.sections.length >= 23 ? "all 23 sections" : `${t.sections.length} sections`})</option>)}
               </Select>
             </Field>
             <div className="md:col-span-2"><Field label="Description" htmlFor="desc"><Textarea id="desc" value={head.description} onChange={(e) => setH("description", e.target.value)} disabled={locked} /></Field></div>
@@ -275,10 +275,10 @@ export function RequestForm({ requestId }: { requestId?: string }) {
       </div>
 
       <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
-        <Card title={requestId ? `Request ${existing.data?.request.number || ""}` : "New request"}>
+        <Card title={requestId ? `Module handover ${existing.data?.request.number || ""}` : "New module handover"}>
           <p className="text-[12.5px] text-muted">Only Module Name and a project are required. Add as much detail as you have — missing details are flagged as <strong>Information Required</strong> in the document.</p>
           <div className="mt-4 flex flex-col gap-2">
-            <Button onClick={save} loading={saving} disabled={locked || busy !== ""} icon={Save}>{requestId ? "Save draft" : "Save draft request"}</Button>
+            <Button onClick={save} loading={saving} disabled={locked || busy !== ""} icon={Save}>{requestId ? "Save draft" : "Save draft"}</Button>
             <Button variant="secondary" onClick={analyze} loading={busy === "analyze"} disabled={locked || busy !== "" || saving} icon={SearchCheck}>Analyse configuration</Button>
             <Button variant="ai" onClick={generate} loading={busy === "generate"} disabled={locked || busy !== "" || saving} icon={Sparkles}>
               {doc ? "Regenerate documentation" : "Generate documentation"}
@@ -325,14 +325,51 @@ export function RequestForm({ requestId }: { requestId?: string }) {
       </aside>
 
       <Modal open={busy === "generate"} onClose={() => {}} title="Generating documentation">
-        <div className="flex flex-col items-center py-4 text-center">
-          <Sparkles className="h-8 w-8 animate-pulse text-ai-600" />
-          <p className="mt-3 text-[14px] font-medium">Groq is analysing the configuration, writing each section and drawing the workflow diagram.</p>
-          <p className="mt-1 text-[13px] text-muted">This usually takes 30–120 seconds. Please keep this page open.</p>
-          <p className="mt-3 font-mono text-[13px] text-muted">Elapsed: {elapsed}s</p>
-          {existing.data?.request && <p className="mt-1 text-[12px] text-muted">Last saved {fmtDateTime(new Date().toISOString())}</p>}
-        </div>
+        <GenerationProgress elapsed={elapsed} sections={(() => {
+          const t = templatesApi.data?.items.find((x) => x.id === head.templateId);
+          return !t || !t.sections.length ? 23 : t.sections.length;
+        })()} />
       </Modal>
+    </div>
+  );
+}
+
+/**
+ * Generation runs as one server request, so exact progress is not known. This shows the
+ * stages the AI goes through and an ESTIMATED time based on the number of sections.
+ */
+function GenerationProgress({ elapsed, sections }: { elapsed: number; sections: number }) {
+  const batches = Math.ceil(sections / 4);
+  const estimate = 25 + batches * 25 + 25;
+  const pct = Math.min(95, Math.round((elapsed / estimate) * 100));
+  const stages = [
+    { label: "Analysing the configuration (gaps and conflicts)", until: 25 },
+    { label: `Writing ${sections} sections in ${batches} batches`, until: 25 + batches * 25 },
+    { label: "Drawing the workflow diagram and saving to ServiceNow", until: estimate },
+  ];
+  return (
+    <div className="py-2">
+      <div className="flex items-center gap-3">
+        <Sparkles className="h-6 w-6 animate-pulse text-ai-600" />
+        <p className="text-[14px] font-medium">The AI is writing your handover document.</p>
+      </div>
+      <ol className="mt-4 space-y-2 text-[13px]">
+        {stages.map((s, i) => {
+          const start = i === 0 ? 0 : stages[i - 1].until;
+          const state = elapsed >= s.until ? "done" : elapsed >= start ? "now" : "next";
+          return (
+            <li key={s.label} className={cx("flex items-center gap-2", state === "next" && "text-muted")}>
+              {state === "done" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : state === "now" ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-ai-600 border-t-transparent" /> : <span className="h-4 w-4 rounded-full border-2 border-slate-300" />}
+              {s.label}
+            </li>
+          );
+        })}
+      </ol>
+      <div className="mt-4 h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-ai-600 transition-all" style={{ width: `${pct}%` }} /></div>
+      <p className="mt-2 text-[12px] text-muted">
+        Elapsed {elapsed}s · estimated about {Math.round(estimate / 60) || 1}–{Math.max(2, Math.round((estimate * 2) / 60))} min (stages are estimates; on the free Groq plan it can take longer while it waits for rate limits).
+      </p>
+      <p className="mt-2 rounded-md bg-amber-50 p-2 text-[12.5px] text-amber-900">Please keep this page open and don’t click Generate again. The document opens automatically when it’s ready.</p>
     </div>
   );
 }

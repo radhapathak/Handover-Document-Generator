@@ -37,7 +37,11 @@ export async function POST(req: NextRequest) {
     const profile = ok ? await findEmployeeByUserName(username) : null;
     if (!ok || !profile) {
       audit("auth.failed", { username, ip, reason: ok ? "no_profile" : "bad_credentials" });
-      throw new HttpError(401, ok ? "Your account does not have a HandoverAI profile. Contact an administrator." : "Invalid username or password.");
+      const hint =
+        config.dataMode === "servicenow" && config.servicenow.authMode === "basic"
+          ? " If your password is correct, ask your administrator to give your ServiceNow user the role snc_basic_auth_api_access and to untick “Password needs reset”."
+          : "";
+      throw new HttpError(401, ok ? "Your account does not have a HandoverAI profile. Ask an administrator to add you under Admin → Employees." : `Invalid username or password.${hint}`);
     }
     if (!profile.active) throw new HttpError(403, "Your HandoverAI profile is inactive.");
 

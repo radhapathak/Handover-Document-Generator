@@ -32,7 +32,7 @@ export default function TemplatesPage() {
   const cols: Column<DocumentTemplate>[] = [
     { key: "name", header: "Template", render: (r) => <div><p className="font-medium">{r.name}</p><p className="text-[12px] text-muted">{r.description}</p></div>, sortValue: (r) => r.name },
     { key: "type", header: "Document type", render: (r) => <Badge>{r.documentType}</Badge> },
-    { key: "sections", header: "Sections", render: (r) => `${r.sections.length} of ${all.length}` },
+    { key: "sections", header: "Sections", render: (r) => (!r.sections.length || r.sections.length >= all.length ? `All ${all.length}` : `${r.sections.length} of ${all.length}`) },
     { key: "hours", header: "Manual effort", render: (r) => `${r.manualEffortHours} h` },
     { key: "active", header: "Status", render: (r) => <Badge tone={r.active ? "green" : "gray"}>{r.active ? "Active" : "Inactive"}</Badge> },
     { key: "act", header: "", render: (r) => <Button size="sm" variant="ghost" onClick={() => setEdit({ ...r })}>Edit</Button> },

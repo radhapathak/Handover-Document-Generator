@@ -15,7 +15,7 @@ export function KtBanner({ area }: { area: "admin" | "employee" }) {
     <section className="mb-5 rounded-lg border border-ai-100 bg-ai-50/60 p-4" aria-label="Notice period KT">
       <div className="mb-2 flex items-center gap-2 text-[13.5px] font-semibold text-navy-900">
         <UserMinus className="h-4 w-4 text-ai-600" />
-        {area === "admin" ? `Employees on notice period (${active.length})` : "Notice-period knowledge transfer"}
+        {area === "admin" ? `Employees on notice period (${active.length})` : "Your exit handovers"}
         <Link href={`/${area}/kt-plans`} className="ml-auto text-[12.5px] font-medium text-brand-600">View all</Link>
       </div>
       <ul className="space-y-2">

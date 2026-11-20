@@ -12,15 +12,15 @@ import type { DataMode, SessionUser } from "@/types";
 
 const EMPLOYEE_NAV = [
   { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/employee/new-request", label: "New Handover", icon: FilePlus2 },
+  { href: "/employee/new-request", label: "New Module Handover", icon: FilePlus2 },
   { href: "/employee/documents", label: "My Documents", icon: FileText },
-  { href: "/employee/kt-plans", label: "My KT Plans", icon: UserMinus },
+  { href: "/employee/kt-plans", label: "My Exit Handovers", icon: UserMinus },
   { href: "/employee/assistant", label: "AI Assistant", icon: Sparkles, ai: true },
 ];
 const ADMIN_NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/admin/kt-plans", label: "Notice Period KT", icon: UserMinus },
+  { href: "/admin/kt-plans", label: "Exit Handovers", icon: UserMinus },
   { href: "/admin/documents", label: "All Documents", icon: FileText },
   { href: "/admin/employees", label: "Employees", icon: Users },
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },

@@ -30,17 +30,17 @@ export function PlanList({ area }: { area: "admin" | "employee" }) {
   return (
     <>
       <PageHeader
-        title={area === "admin" ? "Notice Period KT" : "My KT Plans"}
-        subtitle={area === "admin" ? "Employees serving notice: 30-day knowledge-transfer plans, tasks, documents and sign-off." : "Knowledge-transfer plans you are part of, as the leaving employee, successor or manager."}
-        crumbs={[{ label: area === "admin" ? "Admin Portal" : "Employee Portal", href: `/${area}/dashboard` }, { label: area === "admin" ? "Notice Period KT" : "My KT Plans" }]}
-        actions={area === "admin" && <Button variant="primary" icon={UserMinus} onClick={() => setOpen(true)}>Start KT plan</Button>}
+        title={area === "admin" ? "Exit Handovers" : "My Exit Handovers"}
+        subtitle={area === "admin" ? "Employees serving their notice period: the 30-day handover plan, tasks, documents and sign-off for each person." : "Exit handovers you are part of: as the person leaving, the successor taking over, or the manager."}
+        crumbs={[{ label: area === "admin" ? "Admin Portal" : "Employee Portal", href: `/${area}/dashboard` }, { label: area === "admin" ? "Exit Handovers" : "My Exit Handovers" }]}
+        actions={area === "admin" && <Button variant="primary" icon={UserMinus} onClick={() => setOpen(true)}>Start exit handover</Button>}
       />
       <Card padded={false}>
         {loading && !data ? <div className="space-y-2 p-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-10" />)}</div> : error ? <div className="p-4"><ErrorState message={error} onRetry={reload} /></div> : (
           <DataTable rows={data?.items || []} columns={cols} searchText={(r) => `${r.number} ${r.employeeName} ${r.successorName}`}
             filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "completed", label: "Completed" }, { value: "cancelled", label: "Cancelled" }], test: (r, v) => r.status === v }]}
-            emptyTitle={area === "admin" ? "No KT plans yet" : "You are not part of any KT plan"}
-            emptyMessage={area === "admin" ? "Start a plan when an employee resigns. It creates a 4-week task list and a handover document request for each module." : undefined}
+            emptyTitle={area === "admin" ? "No exit handovers yet" : "You are not part of any exit handover"}
+            emptyMessage={area === "admin" ? "When an employee resigns, start an exit handover. It creates a 4-week task plan and a module handover for each module they own." : undefined}
             onRowClick={(r) => router.push(`/${area}/kt-plans/${r.id}`)} />
         )}
       </Card>

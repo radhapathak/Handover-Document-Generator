@@ -48,7 +48,7 @@ export function PlanDetail({ id, area }: { id: string; area: "admin" | "employee
   });
   const sign = (as: "successor" | "manager") => run(`sign-${as}`, async () => {
     await api(`/api/kt-plans/${id}/signoff`, { body: { as } });
-    toast.success(as === "successor" ? "Handover confirmed." : "Final sign-off recorded. The KT plan is complete.");
+    toast.success(as === "successor" ? "Handover confirmed." : "Final sign-off recorded. The exit handover is complete.");
     await reload();
   });
   const summary = () => run("summary", async () => {
@@ -80,9 +80,9 @@ export function PlanDetail({ id, area }: { id: string; area: "admin" | "employee
   return (
     <>
       <PageHeader
-        title={`KT plan: ${people[plan.employeeId] || ""}`}
+        title={`Exit handover: ${people[plan.employeeId] || ""}`}
         subtitle={`${plan.number} · Notice ${fmtDate(plan.noticeStart)} → last working day ${fmtDate(plan.lastWorkingDay)}`}
-        crumbs={[{ label: area === "admin" ? "Admin Portal" : "Employee Portal", href: `/${area}/dashboard` }, { label: area === "admin" ? "Notice Period KT" : "My KT Plans", href: `/${area}/kt-plans` }, { label: plan.number }]}
+        crumbs={[{ label: area === "admin" ? "Admin Portal" : "Employee Portal", href: `/${area}/dashboard` }, { label: area === "admin" ? "Exit Handovers" : "My Exit Handovers", href: `/${area}/kt-plans` }, { label: plan.number }]}
         actions={
           <>
             <RiskBadge risk={progress.risk} status={plan.status} />

@@ -9,9 +9,9 @@ function Inner() {
   return (
     <>
       <PageHeader
-        title={id ? "Edit Handover Request" : "Create New Handover"}
-        subtitle="Describe the module in plain English. Optional fields can be left blank."
-        crumbs={[{ label: "Employee Portal", href: "/employee/dashboard" }, { label: id ? "Edit Request" : "New Handover" }]}
+        title={id ? "Edit Module Handover" : "New Module Handover"}
+        subtitle="One module handover = one module or process. Describe it in plain English; the AI writes the handover document and flow diagram. Optional fields can be left blank."
+        crumbs={[{ label: "Employee Portal", href: "/employee/dashboard" }, { label: id ? "Edit Module Handover" : "New Module Handover" }]}
       />
       <RequestForm key={id || "new"} requestId={id} />
     </>

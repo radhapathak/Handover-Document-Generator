@@ -59,6 +59,8 @@ async function flow(mode, base, creds) {
     let p = emp.page;
     await p.waitForSelector("text=Estimated Hours Saved");
     check(tag("employee dashboard renders KPIs"), await p.isVisible("text=Pending Approvals"));
+    await p.waitForSelector("text=Your next steps");
+    check(tag("employee sees 'Your next steps'"), true);
     await p.screenshot({ path: path.join(OUT, `${mode}-employee-dashboard.png`) });
 
     for (const pg of ["/employee/documents", "/employee/new-request", "/employee/assistant", "/employee/kt-plans"]) {
@@ -91,7 +93,7 @@ async function flow(mode, base, creds) {
     await p.click("text=Add business rule");
     await p.fill("[aria-label='Business Rules 2 Rule name']", "All to CAB");
     await p.screenshot({ path: path.join(OUT, `${mode}-new-request.png`), fullPage: false });
-    await p.click("text=Save draft request");
+    await p.click("button:has-text('Save draft')");
     await p.waitForURL(/new-request\?id=/, { timeout: 15000 });
     const requestId = new URL(p.url()).searchParams.get("id");
     check(tag("request saved"), Boolean(requestId));
@@ -266,7 +268,7 @@ async function flow(mode, base, creds) {
 
     // --- Notice-period KT plan: HR starts a plan for Priya, Rahul is successor, Meera signs off
     await p.goto(`${base}/admin/kt-plans`);
-    await p.click("button:has-text('Start KT plan')");
+    await p.click("button:has-text('Start exit handover')");
     await p.waitForSelector("#employeeId option:has-text('Priya Sharma')", { state: "attached" });
     await p.selectOption("#employeeId", { label: "Priya Sharma (priya.sharma)" });
     await p.selectOption("#successorId", { label: "Rahul Verma (rahul.verma)" });
@@ -286,6 +288,8 @@ async function flow(mode, base, creds) {
     p = leaver.page;
     await p.waitForSelector("text=Your handover");
     check(tag("leaver sees notice-period banner on dashboard"), true);
+    await p.waitForSelector("text=List all modules, projects and recurring duties");
+    check(tag("leaver's next step is the first exit-handover task"), true);
     await p.goto(`${base}/employee/kt-plans/${planId}`);
     await p.waitForSelector("text=Fill in & generate");
     check(tag("leaver gets link to fill in the module KT document"), true);

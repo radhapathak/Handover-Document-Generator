@@ -6,6 +6,7 @@ import { useApi, fmtDate } from "@/lib/client/api";
 import { Button, Card, EmptyState, ErrorState, KpiCard, PageHeader, PageSkeleton, StateBadge } from "@/components/shared/ui";
 import type { DocState } from "@/types";
 import { KtBanner } from "@/components/kt/kt-banner";
+import { NextSteps } from "@/components/dashboard/next-steps";
 
 interface Dash {
   kpis: { myProjects: number; documentsGenerated: number; draftDocuments: number; pendingApprovals: number; approvedDocuments: number; hoursSaved: number };
@@ -26,10 +27,11 @@ export default function EmployeeDashboard() {
           <>
             <Link href="/employee/assistant"><Button icon={Sparkles}>AI Documentation Assistant</Button></Link>
             <Link href="/employee/documents"><Button icon={Files}>View My Documents</Button></Link>
-            <Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>Create New Handover</Button></Link>
+            <Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>New Module Handover</Button></Link>
           </>
         }
       />
+      <NextSteps area="employee" />
       <KtBanner area="employee" />
       {loading && !data ? <PageSkeleton /> : error ? <ErrorState message={error} onRetry={reload} /> : data && (
         <div className="space-y-5">
@@ -42,9 +44,9 @@ export default function EmployeeDashboard() {
             <KpiCard label="Estimated Hours Saved" value={data.kpis.hoursSaved} icon={Timer} tone="purple" hint="vs. manual baseline" />
           </div>
           <div className="grid gap-5 xl:grid-cols-3">
-            <Card className="xl:col-span-2" title="Recent documentation requests" padded={false} actions={<Link href="/employee/documents" className="text-[13px] font-medium text-brand-600">View all</Link>}>
+            <Card className="xl:col-span-2" title="Recent module handovers" padded={false} actions={<Link href="/employee/documents" className="text-[13px] font-medium text-brand-600">View all</Link>}>
               {data.recentRequests.length === 0 ? (
-                <EmptyState title="No requests yet" message="Create your first handover request to get started." action={<Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>Create New Handover</Button></Link>} />
+                <EmptyState title="No module handovers yet" message="Start your first module handover to get started." action={<Link href="/employee/new-request"><Button variant="primary" icon={FilePlus2}>New Module Handover</Button></Link>} />
               ) : (
                 <ul className="divide-y divide-line">
                   {data.recentRequests.map((r) => (
